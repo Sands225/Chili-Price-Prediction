@@ -178,27 +178,21 @@ st.markdown(
 # Render 12 months in 2 rows of 6 columns
 for row_idx in [0, 6]:
     m_cols = st.columns(6)
-    for col_idx, (_, row) in enumerate(fcast_df.iloc[row_idx:row_idx+6].iterrows()):
-        pct = (row["Forecast"] - current_price) / current_price * 100
-        if pct > 8:
-            stat_lbl, stat_clr = "BULLISH", P["secondary"]
-        elif pct < -5:
-            stat_lbl, stat_clr = "VOLATILE", P["primary"]
-        elif abs(pct) <= 2:
-            stat_lbl, stat_clr = "NEUTRAL", P["muted"]
-        else:
-            stat_lbl, stat_clr = "STABLE", P["primary"]
+    for col_idx in range(6):
+        idx = row_idx + col_idx
+        if idx >= len(fcast_df):
+            break
+        row = fcast_df.iloc[idx]
+        prev_p = fcast_df.iloc[idx - 1]["Forecast"] if idx > 0 else current_price
+        pct = (row["Forecast"] - prev_p) / prev_p * 100
 
-        arrow = "↗" if pct > 0 else "↘"
-        arrow_clr = P["tertiary"] if pct > 0 else P["cream"]
+        arrow = "↗" if pct >= 0 else "↘"
+        arrow_clr = P["primary"] if pct >= 0 else P["emerald"]
 
         with m_cols[col_idx]:
             st.markdown(
                 f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:6px;padding:14px;margin-bottom:12px;'>"
-                f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;'>"
-                f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};text-transform:uppercase;'>{pd.Timestamp(row['Date']).strftime('%b %Y')}</div>"
-                f"<div style='background:{stat_clr};color:#000;font-family:\"JetBrains Mono\",monospace;font-size:8px;font-weight:700;padding:2px 4px;border-radius:3px;'>{stat_lbl}</div>"
-                f"</div>"
+                f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:11px;color:{P['muted']};text-transform:uppercase;margin-bottom:8px;'>{pd.Timestamp(row['Date']).strftime('%b %Y')}</div>"
                 f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:16px;font-weight:700;color:{P['cream']};margin-bottom:8px;'>Rp {row['Forecast']:,.0f}</div>"
                 f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{arrow_clr};'>{arrow} {pct:+.1f}% vs Prev</div>"
                 f"</div>",
