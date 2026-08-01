@@ -133,15 +133,9 @@ st.markdown(
     f"<div style='font-family:Outfit,sans-serif;font-size:18px;font-weight:700;color:{P['cream']};'>Regional Price Cycle Analysis</div>"
     f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>Isolasi Tren & Siklus Harga Daerah: {sel_prov}</div>"
     f"</div>"
-    f"<div style='display:flex;gap:40px;text-align:right;'>"
-    f"<div>"
+    f"<div style='text-align:right;'>"
     f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>LOCAL VARIANCE</div>"
     f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};'>{local_variance_pct:+.1f}% vs National</div>"
-    f"</div>"
-    f"<div>"
-    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>CYCLE STATE</div>"
-    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['secondary']};'>Peak Expansion</div>"
-    f"</div>"
     f"</div></div>",
     unsafe_allow_html=True
 )
@@ -172,7 +166,7 @@ with c_main:
         mode="lines", name="MA3",
         line=dict(color=P["secondary"], width=1.5),
     ))
-    lo_h = blayout("Price Trajectory (2020 - Present)", h=380, legend=True)
+    lo_h = blayout("Price Trajectory (2020 - 2024)", h=380, legend=True)
     lo_h["plot_bgcolor"] = P["card"]
     lo_h["paper_bgcolor"] = P["card"]
     lo_h["margin"] = dict(l=20, r=20, t=60, b=20)
