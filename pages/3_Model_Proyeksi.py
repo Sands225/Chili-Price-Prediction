@@ -52,7 +52,7 @@ with c1:
         f"<div style='position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,{P['primary']},{P['secondary']});'></div>"
         f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:11px;color:{P['muted']};text-transform:uppercase;margin-bottom:4px;'>MODEL STATUS ⚙</div>"
         f"<div style='font-family:Outfit,sans-serif;font-size:14px;color:{P['cream']};margin-bottom:16px;'>Holt-Winters Seasonal + RF Engine</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:11px;color:{P['primary']};'>Ready & Fitted (2020–2024 Base)</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:11px;color:{P['primary']};'>(2020–2024 Base)</div>"
         f"</div>",
         unsafe_allow_html=True
     )
