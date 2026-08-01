@@ -384,6 +384,8 @@ def get_chili_wfp(path: str, commodity_type: str = "birds_eye") -> pd.DataFrame:
     df = load_wfp_raw(path)
     ch = (df[df["commodity"].str.contains("Chili|chili", na=False, regex=True)]
           .dropna(subset=["date", "price"]).copy())
+    # Clean outlier/errant price entries (e.g. data errors < Rp 5.000 or > Rp 200.000 per kg)
+    ch = ch[(ch["price"] >= 5000) & (ch["price"] <= 200000)]
     if commodity_type == "birds_eye":
         ch = ch[ch["commodity"].str.lower().str.contains("bird", na=False)]
     elif commodity_type == "red":
