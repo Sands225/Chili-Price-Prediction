@@ -470,17 +470,34 @@ def forecast_months_ahead(res: dict, n: int = 7) -> pd.DataFrame:
     Multi-step forecasting using Holt-Winters Exponential Smoothing to capture
     dynamic seasonal waves (December-March surge, May-August trough).
     """
-    from statsmodels.tsa.holtwinters import ExponentialSmoothing
     mdf = res["mdf"].copy()
     ts  = mdf.set_index("Date")["Price"]
     
     try:
+        from statsmodels.tsa.holtwinters import ExponentialSmoothing
         hw_model = ExponentialSmoothing(ts, seasonal_periods=12, trend="add", seasonal="add", initialization_method="estimated")
         hw_fit   = hw_model.fit()
         fc_vals  = hw_fit.forecast(n)
     except Exception:
-        # Fallback to simple moving average + seasonal factors
-        fc_vals  = pd.Series([ts.iloc[-1]] * n)
+        # Fallback: Seasonal additive projection based on historical monthly averages
+        mdf_calc = mdf.copy()
+        mdf_calc["Month"] = mdf_calc["Date"].dt.month
+        monthly_means = mdf_calc.groupby("Month")["Price"].mean()
+        overall_mean = mdf_calc["Price"].mean()
+        seasonal_diff = monthly_means - overall_mean
+        
+        last_date = ts.index.max()
+        future_dates = pd.date_range(last_date + pd.DateOffset(months=1), periods=n, freq="MS")
+        last_val = ts.iloc[-1]
+        
+        fc_list = []
+        for d in future_dates:
+            m = d.month
+            s_factor = seasonal_diff.get(m, 0.0)
+            # Smooth transition from last observed price + seasonal deviation
+            pred_val = last_val * 0.4 + (overall_mean + s_factor) * 0.6
+            fc_list.append(pred_val)
+        fc_vals = pd.Series(fc_list, index=future_dates)
         
     last_date = ts.index.max()
     future_dates = pd.date_range(last_date + pd.DateOffset(months=1), periods=n, freq="MS")
