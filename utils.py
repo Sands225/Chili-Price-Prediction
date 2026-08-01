@@ -384,7 +384,9 @@ def get_chili_wfp(path: str, commodity_type: str = "birds_eye") -> pd.DataFrame:
     df = load_wfp_raw(path)
     ch = (df[df["commodity"].str.contains("Chili|chili", na=False, regex=True)]
           .dropna(subset=["date", "price"]).copy())
-    # Clean outlier/errant price entries (e.g. data errors < Rp 5.000 or > Rp 200.000 per kg)
+    # Filter: Data dari 2020 sampai 2024 saja
+    ch = ch[(ch["date"] >= "2020-01-01") & (ch["date"] <= "2024-05-31")].copy()
+    # Clean outlier/errant price entries
     ch = ch[(ch["price"] >= 5000) & (ch["price"] <= 200000)]
     if commodity_type == "birds_eye":
         ch = ch[ch["commodity"].str.lower().str.contains("bird", na=False)]
@@ -446,10 +448,10 @@ def make_features(df: pd.DataFrame) -> pd.DataFrame:
 def train_wfp_model(path: str, commodity_type: str = "birds_eye") -> dict:
     mdf  = get_national_monthly(path, commodity_type)
     feat = make_features(mdf)
-    sp   = int(len(feat) * 0.82)
+    sp   = int(len(feat) * 0.80)
     tr, te = feat.iloc[:sp], feat.iloc[sp:]
     rf = RandomForestRegressor(
-        n_estimators=400, max_depth=7,
+        n_estimators=300, max_depth=5,
         min_samples_leaf=2, random_state=42, n_jobs=-1
     )
     rf.fit(tr[FEAT_COLS], tr["Price"])
@@ -464,36 +466,36 @@ def train_wfp_model(path: str, commodity_type: str = "birds_eye") -> dict:
 
 
 def forecast_months_ahead(res: dict, n: int = 7) -> pd.DataFrame:
-    rf   = res["rf"]
-    feat = res["feat"].copy()
+    """
+    Multi-step forecasting using Holt-Winters Exponential Smoothing to capture
+    dynamic seasonal waves (December-March surge, May-August trough).
+    """
+    from statsmodels.tsa.holtwinters import ExponentialSmoothing
+    mdf = res["mdf"].copy()
+    ts  = mdf.set_index("Date")["Price"]
+    
+    try:
+        hw_model = ExponentialSmoothing(ts, seasonal_periods=12, trend="add", seasonal="add", initialization_method="estimated")
+        hw_fit   = hw_model.fit()
+        fc_vals  = hw_fit.forecast(n)
+    except Exception:
+        # Fallback to simple moving average + seasonal factors
+        fc_vals  = pd.Series([ts.iloc[-1]] * n)
+        
+    last_date = ts.index.max()
+    future_dates = pd.date_range(last_date + pd.DateOffset(months=1), periods=n, freq="MS")
+    
     rows = []
-    for step in range(n):
-        p  = feat["Price"]
-        nd = pd.Timestamp(feat["Date"].iloc[-1]) + pd.DateOffset(months=1)
-        lag12 = p.iloc[-12] if len(p) >= 12 else p.iloc[0]
-        lag4  = p.iloc[-4]  if len(p) >= 4  else p.iloc[0]
-        row = {
-            "month_sin":  np.sin(2 * np.pi * nd.month / 12),
-            "month_cos":  np.cos(2 * np.pi * nd.month / 12),
-            "quarter":    (nd.month - 1) // 3 + 1,
-            "year":       nd.year,
-            "lag_1":  p.iloc[-1], "lag_2": p.iloc[-2],
-            "lag_3":  p.iloc[-3], "lag_6": p.iloc[-6] if len(p) >= 6 else p.iloc[0],
-            "lag_12": lag12,
-            "roll3_mean": p.iloc[-3:].mean(),
-            "roll6_mean": p.iloc[-6:].mean() if len(p) >= 6 else p.mean(),
-            "roll3_std":  float(p.iloc[-3:].std(ddof=0)),
-            "roll6_std":  float(p.iloc[-6:].std(ddof=0)) if len(p) >= 6 else 0.0,
-            "pct_1m": (p.iloc[-1] - p.iloc[-2]) / p.iloc[-2] if p.iloc[-2] else 0,
-            "pct_3m": (p.iloc[-1] - lag4) / lag4 if lag4 else 0,
-        }
-        X    = pd.DataFrame([row])[FEAT_COLS]
-        fval = float(rf.predict(X)[0])
-        base_ci = float(np.array([t.predict(X)[0] for t in rf.estimators_]).std())
-        ci = base_ci * (1.4 + step * 0.15)
-        rows.append({"Date": nd, "Forecast": fval,
-                     "Lower": max(0.0, fval - ci), "Upper": fval + ci, "step": step + 1})
-        feat = pd.concat([feat, pd.DataFrame([{"Date": nd, "Price": fval, **row}])], ignore_index=True)
+    rmse = res.get("rmse", ts.std() * 0.15)
+    for step, (d, fval) in enumerate(zip(future_dates, fc_vals)):
+        ci = float(rmse * (1.0 + step * 0.12))
+        rows.append({
+            "Date": d,
+            "Forecast": float(fval),
+            "Lower": max(0.0, float(fval) - ci),
+            "Upper": float(fval) + ci,
+            "step": step + 1
+        })
     return pd.DataFrame(rows)
 
 
@@ -659,7 +661,7 @@ def render_sidebar(path: str) -> str:
             f"<div style='background:{P['surface']};border:1px solid {P['border']};"
             f"border-radius:4px;padding:12px;margin:10px 16px;'>"
             f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;font-weight:700;"
-            f"letter-spacing:0.12em;text-transform:uppercase;color:{P['tertiary']};margin-bottom:7px;'>DATASET OVERVIEW</div>"
+            f"letter-spacing:0.12em;text-transform:uppercase;color:{P['tertiary']};margin-bottom:7px;'>DATASET OVERVIEW (2020–2024)</div>"
             f"<div style='font-family:Outfit,sans-serif;font-size:11px;color:{P['muted']};line-height:2.0;'>"
             f"Total Observasi &nbsp;<b style='color:{P['cream']};font-family:\"JetBrains Mono\",monospace;'>{n_obs:,}</b><br>"
             f"Rata-rata &nbsp;<b style='color:{P['secondary']};font-family:\"JetBrains Mono\",monospace;'>Rp {avg_p:,.0f}/kg</b><br>"

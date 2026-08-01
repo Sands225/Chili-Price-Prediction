@@ -39,7 +39,7 @@ st.markdown(
 <h2 style='font-family:Outfit,sans-serif; font-size:28px; font-weight:800; color:{P['cream']}; margin:0;'>Indonesian Chili Price Forecasting</h2>
 </div>
 <p style='font-family:Outfit,sans-serif; font-size:16px; color:{P['cream']}; line-height:1.7; margin-bottom:0; max-width:900px; position:relative; z-index:1;'>
-Platform intelijen harga berbasis data yang dirancang khusus untuk menganalisis dan memproyeksikan pergerakan harga cabai di Indonesia. Dashboard ini memberikan wawasan strategis mengenai tren historis, ketimpangan spasial, dan peringatan dini volatilitas pasokan.
+Platform prediksi harga berbasis data yang dirancang khusus untuk menganalisis dan memproyeksikan pergerakan harga cabai di Indonesia. Dashboard ini memberikan wawasan strategis mengenai tren historis, ketimpangan spasial, dan peringatan dini volatilitas pasokan.
 </p>
 </div>
     """,
@@ -92,7 +92,7 @@ with c3:
 <div style='color:{P['tertiary']};margin-bottom:16px;'>{icon_cpu}</div>
 <b style='color:{P['cream']};font-size:18px;font-family:Outfit,sans-serif;display:block;margin-bottom:12px;'>Model Proyeksi</b>
 <p style='margin:0;font-size:14px;color:{P['muted']};font-family:Outfit,sans-serif;line-height:1.6;'>
-Memanfaatkan algoritma <i>Machine Learning</i> (Random Forest) untuk memproyeksikan harga cabai beberapa bulan ke depan.
+Memanfaatkan kombinasi <i>Machine Learning</i> (Random Forest) dan model musiman (Holt-Winters) untuk memproyeksikan tren hingga 12 bulan ke depan.
 </p>
 </div>
         """,
@@ -137,7 +137,7 @@ tech_html = f"""
 <div style='background:{P['surface']};border-left:3px solid {P['tertiary']};padding:16px;border-radius:6px;border:1px solid {P['border']};border-left-width:3px;border-left-color:{P['tertiary']};'>
 <b style='font-family:Outfit,sans-serif;font-size:15px;color:{P['cream']};'>WFP - Indonesia Food Prices</b>
 <p style='font-family:Outfit,sans-serif;font-size:13px;color:{P['muted']};margin:6px 0 0 0;line-height:1.5;'>
-Dataset historis terpusat perihal pergerakan harga komoditas pangan (2007 - 2024), diperbarui secara periodik.
+Dataset pergerakan harga pangan Indonesia dengan fokus analisis panel 2020–2024 pada 35 provinsi.
 </p>
 </div>
 </div>
@@ -155,7 +155,7 @@ Dataset historis terpusat perihal pergerakan harga komoditas pangan (2007 - 2024
 {tech_pill(icon_code, "Streamlit UI", P['primary'])}
 {tech_pill(icon_table, "Pandas & NumPy", P['emerald'])}
 {tech_pill(icon_pie, "Plotly Graphs", P['secondary'])}
-{tech_pill(icon_net, "Scikit-Learn ML", P['tertiary'])}
+{tech_pill(icon_net, "Scikit-Learn & Statsmodels", P['tertiary'])}
 </div>
 </div>
 

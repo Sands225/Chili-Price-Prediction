@@ -307,15 +307,17 @@ with view_tab2:
     with pc2:
         mkt_local = prov_df.groupby("market")["price"].mean().sort_values(ascending=False).head(10)
         if not mkt_local.empty:
+            max_mkt_val = mkt_local.max()
             fig_local = go.Figure(go.Bar(
                 x=mkt_local.values, y=mkt_local.index, orientation="h",
                 marker_color=[P["primary"] if i < 2 else (P["secondary"] if i < 4 else P["surface"]) for i in range(len(mkt_local))],
                 text=[f" Rp {v:,.0f}" for v in mkt_local.values], textposition="outside",
-                textfont=dict(size=9, color=P["muted"], family="JetBrains Mono"),
+                textfont=dict(size=9, color=P["cream"], family="JetBrains Mono"),
                 hovertemplate="<b>%{y}</b><br>Rp %{x:,.0f}/kg<extra></extra>"
             ))
             lo = blayout(f"Top Pasar — {sel_prov}", h=360, legend=False)
-            lo["margin"]["r"] = 80
+            lo["margin"] = dict(l=150, r=140, t=40, b=20)
+            lo["xaxis"]["range"] = [0, max_mkt_val * 1.35]
             fig_local.update_layout(**lo)
             st.plotly_chart(fig_local, use_container_width=True, config={"displayModeBar": False})
 

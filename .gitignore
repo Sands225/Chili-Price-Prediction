@@ -1,0 +1,13 @@
+__pycache__/
+catboost_info/
+*.zip
+*.pdf
+Untitled-1.md
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+texput.log
+app_head*.py

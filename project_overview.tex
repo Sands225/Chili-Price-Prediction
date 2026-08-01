@@ -1,0 +1,63 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[bahasa]{babel}
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=3cm, right=3cm}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+
+\title{\textbf{Analisis dan Proyeksi Harga Cabai Nasional}}
+\author{Tim Pengembang Sistem Intelijen Pangan}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Gambaran Umum Proyek dan Konsep Forecasting}
+
+Proyek ini merupakan sistem intelijen pasar dan prediksi harga cabai di Indonesia yang dibangun menggunakan teknologi kecerdasan buatan. Sistem ini dirancang untuk memetakan data historis, mengidentifikasi volatilitas wilayah, serta memproyeksikan harga cabai untuk jangka menengah sebagai langkah mitigasi risiko inflasi pangan nasional.
+
+Forecasting atau peramalan deret waktu (\textit{time-series forecasting}) adalah suatu metode analisis untuk memprediksi nilai di masa depan berdasarkan pola, tren, dan siklus yang terbentuk pada masa lalu. Berbeda dengan prediksi data tabular biasa, data deret waktu memiliki ketergantungan kronologis di mana harga pada suatu bulan sangat dipengaruhi oleh apa yang terjadi pada bulan-bulan sebelumnya.
+
+Dalam konteks komoditas pangan seperti cabai, peramalan menjadi krusial karena pergerakan harganya tidak linier dan sangat fluktuatif. Fluktuasi ini dipengaruhi oleh siklus tahunan seperti pergantian cuaca (musim kemarau dan hujan) yang berdampak pada produksi tani, serta lonjakan konsumsi musiman masyarakat pada hari raya keagamaan. Dengan memahami pola historis tersebut melalui metode forecasting, kita dapat mengantisipasi lonjakan harga sebelum terjadi di pasar.
+
+\section{Mengenai Proyek Forecasting yang Dibuat}
+
+Proyek ini secara spesifik berfokus pada pemodelan prediksi rata-rata harga cabai eceran bulanan di tingkat nasional. Dataset yang digunakan bersumber dari World Food Programme (WFP) Indonesia yang mencakup riwayat pencatatan harga selama kurang lebih 17 tahun (periode 2007 hingga 2024). Data ini dikumpulkan dari 34 provinsi dan mencakup 215 pasar eceran di seluruh wilayah Indonesia.
+
+Proyek ini tidak hanya melakukan visualisasi data historis saja, tetapi juga mengimplementasikan model machine learning untuk memproyeksikan harga cabai hingga 7 bulan ke depan. Model ini bekerja secara berantai (\textit{recursive forecasting}), di mana prediksi bulan pertama akan digunakan kembali sebagai data masukan (\textit{input}) untuk memprediksi bulan kedua, dan seterusnya. Untuk memberikan estimasi yang realistis, setiap angka proyeksi dilengkapi dengan batas ketidakpastian (\textit{confidence interval}) yang akan melebar seiring bertambah jauhnya horizon prediksi.
+
+\section{Rekayasa Fitur dalam Pemodelan}
+
+Untuk membantu model machine learning mengenali dinamika waktu, data deret waktu harga cabai diubah menjadi sekumpulan fitur prediktor yang kaya akan informasi. Fitur-fitur utama yang dikembangkan meliputi:
+\begin{itemize}
+    \item \textbf{Lag Features (Fitur Keterlambatan Waktu):} Memasukkan nilai harga dari 1 bulan lalu, 2 bulan lalu, 3 bulan lalu, 6 bulan lalu, hingga 12 bulan lalu. Fitur ini sangat penting karena harga cabai saat ini memiliki korelasi kuat dengan harga bulan-bulan sebelumnya, dan harga 12 bulan lalu dapat menangkap pola musiman tahunan pada bulan yang sama.
+    \item \textbf{Rolling Statistics (Statistik Bergerak):} Menghitung rata-rata bergerak (\textit{moving average}) dan standar deviasi bergerak untuk periode 3 bulan dan 6 bulan terakhir. Fitur rata-rata membantu menangkap momentum tren harga jangka pendek dan menengah, sedangkan standar deviasi menangkap tingkat kepanikan atau volatilitas pasar terkini.
+    \item \textbf{Cyclical Encoding (Penyandian Siklus Waktu):} Mengubah representasi angka bulan (1 sampai 12) menggunakan fungsi trigonometri sinus dan kosinus. Langkah ini diperlukan karena waktu bersifat siklik. Dengan penyandian ini, model dapat memahami bahwa bulan Desember (bulan 12) dan bulan Januari (bulan 1) letaknya bersebelahan atau memiliki kedekatan temporal.
+\end{itemize}
+
+\section{Teknologi yang Digunakan (Tech Stack)}
+
+Sistem ini dikembangkan secara modular menggunakan ekosistem Python 3 dengan pustaka sebagai berikut:
+\begin{itemize}
+    \item \textbf{Pemodelan Machine Learning:} Scikit-Learn untuk algoritma \texttt{RandomForestRegressor} yang menggunakan 400 pohon keputusan (\textit{decision trees}). Algoritma \textit{ensemble} ini dipilih karena sangat andal dalam menangani pola non-linier dan meminimalkan risiko \textit{overfitting} pada data historis yang volatil.
+    \item \textbf{Analisis Time-Series:} Statsmodels digunakan untuk mendukung dekomposisi deret waktu guna memisahkan komponen tren, musiman, dan residu dari data historis.
+    \item \textbf{Pengolahan Data:} Pandas dan NumPy digunakan untuk manipulasi data, pembersihan nilai kosong, agregasi harga eceran, dan perhitungan seluruh rekayasa fitur deret waktu.
+    \item \textbf{Visualisasi Interaktif:} Plotly (\texttt{graph\_objects} dan \texttt{express}) digunakan untuk menghasilkan visualisasi pergerakan harga, peta spasial, serta grafik evaluasi model secara interaktif dan dinamis.
+    \item \textbf{Framework Dashboard:} Streamlit digunakan sebagai fondasi aplikasi web multi-halaman (\textit{multi-page application}) yang menyajikan seluruh visualisasi dan simulasi prediksi secara real-time.
+    \item \textbf{Desain Antarmuka:} Kustomisasi CSS yang diinjeksikan secara langsung untuk membangun tema \textit{Dark Mode} premium dengan tipografi Inter dan JetBrains Mono untuk tampilan metrik yang presisi.
+\end{itemize}
+
+\section{Struktur Modul Dashboard Streamlit}
+
+Aplikasi dashboard ini dibagi menjadi empat menu navigasi utama:
+\begin{itemize}
+    \item \textbf{Overview Eksekutif:} Berfungsi sebagai pusat informasi ringkas mengenai harga nasional terbaru, status volatilitas pasar, KPI utama, narasi otomatis kondisi disparitas wilayah, serta grafik ringkas harga 24 bulan terakhir. Halaman ini juga dilengkapi dengan tab informasi proyek.
+    \item \textbf{Analisis Spasial:} Menyajikan visualisasi geografis dari 215 pasar di 34 provinsi menggunakan Scattermapbox. Halaman ini memetakan rata-rata harga historis untuk menganalisis disparitas harga antar-wilayah dan mengidentifikasi wilayah dengan harga tertinggi atau terendah.
+    \item \textbf{Tren dan Musiman:} Memvisualisasikan pola musiman dan tren jangka panjang harga cabai dari data 17 tahun terakhir. Fitur ini memudahkan pengguna melihat siklus tahunan kenaikan harga yang berulang.
+    \item \textbf{Model Proyeksi:} Menampilkan visualisasi kurva proyeksi harga 7 bulan ke depan beserta batas ketidakpastiannya. Halaman ini juga menampilkan metrik evaluasi model (MAE, RMSE, MAPE, R-squared) untuk keterbukaan akurasi, visualisasi kontribusi fitur (\textit{Feature Importance}), dan diagram tebar aktual versus prediksi untuk melihat deviasi performa model.
+\end{itemize}
+
+\end{document}
