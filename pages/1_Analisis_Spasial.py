@@ -289,12 +289,12 @@ with view_tab2:
                 lat=pg["lat"], lon=pg["lon"], mode="markers",
                 marker=go.scattermapbox.Marker(
                     size=12, color=pg["avg_price"],
-                    colorscale=[[0.0, P["emerald"]], [0.5, P["secondary"]], [1.0, P["primary"]]],
+                    colorscale=[[0.0, P["emerald"]], [0.5, P["tertiary"]], [1.0, P["primary"]]],
                     showscale=True,
                     colorbar=dict(
-                        title=dict(text="Harga (Rp/kg)", font=dict(color=P["cream"], size=10, family="JetBrains Mono"), side="top"),
-                        tickfont=dict(color=P["muted"], size=9), thickness=10, tickformat=",.0f", outlinecolor="rgba(0,0,0,0)",
-                        y=0.45, len=0.85
+                        title=dict(text="Rp/kg", font=dict(color=P["cream"], size=9, family="JetBrains Mono"), side="top"),
+                        tickfont=dict(color=P["muted"], size=8), thickness=8, tickformat=",.0f", outlinecolor="rgba(0,0,0,0)",
+                        x=0.92, xanchor="right", y=0.5, len=0.75
                     )
                 ),
                 text=[f"<b>{r['market']}</b><br>Rp {r['avg_price']:,.0f}/kg" for _, r in pg.iterrows()],
@@ -310,12 +310,26 @@ with view_tab2:
             st.info(f"Data koordinat tidak tersedia untuk {sel_prov}.")
 
     with pc2:
-        mkt_local = prov_df.groupby("market")["price"].mean().sort_values(ascending=False).head(10)
+        mkt_local = prov_df.groupby("market")["price"].mean().sort_values(ascending=True).tail(10)
         if not mkt_local.empty:
             max_mkt_val = mkt_local.max()
+            min_mkt_val = mkt_local.min()
+            range_val = (max_mkt_val - min_mkt_val) if max_mkt_val > min_mkt_val else 1.0
+            
+            # Dynamic color coding synchronized with provincial map colorscale
+            bar_colors = []
+            for v in mkt_local.values:
+                norm = (v - min_mkt_val) / range_val if range_val > 0 else 0.5
+                if norm >= 0.7:
+                    bar_colors.append(P["secondary"])   # Orange/Red for top price in province (matches orange dot on map)
+                elif norm >= 0.3:
+                    bar_colors.append(P["tertiary"])    # Amber for moderate price in province
+                else:
+                    bar_colors.append(P["emerald"])     # Emerald green for lowest price in province (matches green dot on map)
+
             fig_local = go.Figure(go.Bar(
                 x=mkt_local.values, y=mkt_local.index, orientation="h",
-                marker_color=[P["primary"] if i < 2 else (P["secondary"] if i < 4 else P["surface"]) for i in range(len(mkt_local))],
+                marker_color=bar_colors,
                 text=[f" Rp {v:,.0f}" for v in mkt_local.values], textposition="outside",
                 textfont=dict(size=9, color=P["cream"], family="JetBrains Mono"),
                 hovertemplate="<b>%{y}</b><br>Rp %{x:,.0f}/kg<extra></extra>"
