@@ -30,7 +30,7 @@ commodity_sel = render_sidebar(DATA_PATH)
 with st.spinner("Melatih model prediksi..."):
     mdf       = get_national_monthly(DATA_PATH, commodity_sel)
     res_model = train_wfp_model(DATA_PATH, commodity_sel)
-    fcast_df  = forecast_months_ahead(res_model, n=7)
+    fcast_df  = forecast_months_ahead(res_model, n=4)
 
 current_price = mdf["Price"].iloc[-1]
 
@@ -53,7 +53,7 @@ mae  = res_model["mae"]
 mape = res_model["mape"]
 r2   = res_model["r2"]
 
-c1, c2, c3, c4 = st.columns([1.5, 1, 1, 1])
+c1, c2, c3 = st.columns([1.5, 1, 1])
 
 with c1:
     st.markdown(
@@ -86,16 +86,6 @@ with c3:
         unsafe_allow_html=True
     )
 
-with c4:
-    st.markdown(
-        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;padding:16px 20px;height:120px;position:relative;'>"
-        f"<div style='position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,{P['primary']},transparent);'></div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:11px;color:{P['muted']};margin-bottom:12px;'>CONFIDENCE BOUNDS</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};margin-bottom:12px;'>Dynamically Expanded</div>"
-        f"<div style='display:flex;align-items:center;gap:8px;'><span style='width:10px;height:10px;border-radius:50%;border:2px solid {P['muted']};'></span><span style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>Based on Forecast Horizon</span></div>"
-        f"</div>",
-        unsafe_allow_html=True
-    )
 
 st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
 
@@ -106,7 +96,7 @@ with c_chart:
     st.markdown(
         f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;'>"
         f"<div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:16px;font-weight:700;color:{P['cream']};'>7-Month Recursive Forecast</div>"
+        f"<div style='font-family:Outfit,sans-serif;font-size:16px;font-weight:700;color:{P['cream']};'>4-Month Recursive Forecast</div>"
         f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>Projected market volatility based on current supply-chain signals</div>"
         f"</div>"
         f"</div>",
@@ -160,19 +150,10 @@ with c_chart:
     st.markdown("</div>", unsafe_allow_html=True)
 
 with c_feat:
-    fi = pd.Series(res_model["rf"].feature_importances_, index=FEAT_COLS).sort_values(ascending=False).head(5)
-    fi_labels = {
-        "lag_1": "HISTORICAL LAGS",
-        "lag_2": "HISTORICAL LAGS",
-        "month_sin": "SEASONALITY (MONSOON DEP)",
-        "roll3_mean": "MOMENTUM INDEX",
-        "pct_1m": "VOLATILITY METRIC",
-        "quarter": "MACRO CYCLE"
-    }
-
+    fi = pd.Series(res_model["rf"].feature_importances_, index=FEAT_COLS).sort_values(ascending=False)
     bars_html = ""
     for k, v in fi.items():
-        lbl = fi_labels.get(k, k.upper())
+        lbl = k.upper()
         pct = v * 100
         bars_html += (
             f"<div style='margin-bottom:16px;'>"
@@ -184,7 +165,7 @@ with c_feat:
         )
 
     st.markdown(
-        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;padding:20px;height:470px;'>"
+        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;padding:20px;height:470px;overflow-y:auto;'>"
         f"<div style='font-family:Outfit,sans-serif;font-size:14px;font-weight:700;color:{P['cream']};margin-bottom:24px;'>Feature Importance</div>"
         f"{bars_html}"
         f"</div>",

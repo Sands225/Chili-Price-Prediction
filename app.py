@@ -232,9 +232,6 @@ with col_main:
         f"({disparity_pct:.0f}%) antara <b>{exp_mkt['admin1']}</b> dan <b>{chp_mkt['admin1']}</b>. "
         f"Data historis 17 tahun menunjukkan <b>{peak_month_name}</b> sebagai bulan puncak yang konsisten."
     )
-    insight_prov = f"Disparitas Rp {(exp_mkt['mean']-chp_mkt['mean']):,.0f}/kg antara {exp_mkt['admin1']} & {chp_mkt['admin1']} dapat ditekan dengan relokasi stok berbasis jalur distribusi laut."
-    forecast_anomaly = f"Permintaan hari raya terpantau {abs(fc_diff):.0f}% {'lebih tinggi' if fc_diff > 0 else 'lebih rendah'} dari model historis 5 tahunan pada proyeksi M+1."
-
     st.markdown(
         f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:6px;padding:20px;'>"
         f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;'>"
@@ -243,19 +240,9 @@ with col_main:
         f"<span style='font-family:Outfit,sans-serif;font-size:15px;font-weight:700;color:{P['cream']};'>Trend Synthesis</span>"
         f"</div>"
         f"</div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:13px;color:{P['cream']};line-height:1.75;"
-        f"padding-bottom:14px;border-bottom:1px solid {P['border']};'>{narrative}</div>"
-        f"<div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;'>"
-        f"<div style='background:{P['surface']};border-radius:4px;padding:12px;border-left:3px solid {P['emerald']};'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;font-weight:700;"
-        f"letter-spacing:0.1em;text-transform:uppercase;color:{P['emerald']};margin-bottom:5px;'>◎ ACTIONABLE INSIGHT</div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['cream']};line-height:1.6;'>{insight_prov}</div>"
-        f"</div>"
-        f"<div style='background:{P['surface']};border-radius:4px;padding:12px;border-left:3px solid {P['tertiary']};'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;font-weight:700;"
-        f"letter-spacing:0.1em;text-transform:uppercase;color:{P['tertiary']};margin-bottom:5px;'>◉ FORECAST ANOMALY</div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['cream']};line-height:1.6;'>{forecast_anomaly}</div>"
-        f"</div></div></div>",
+        f"<div style='font-family:Outfit,sans-serif;font-size:13px;color:{P['cream']};line-height:1.75;'>"
+        f"{narrative}</div>"
+        f"</div>",
         unsafe_allow_html=True
     )
 
@@ -318,20 +305,15 @@ with col_side:
     total_alerts = len(vol_mkts)
     top_mkts = vol_mkts.head(3)
 
-    last_update_labels = ["2m ago", "15m ago", "1h ago", "3h ago", "6h ago"]
-
     alerts_html = ""
     for i, row in top_mkts.iterrows():
         clr = P["primary"] if row["cv"] > 20 else (P["secondary"] if row["cv"] > 10 else P["tertiary"])
-        last_update = last_update_labels[i] if i < len(last_update_labels) else f"{i+1}h ago"
         alerts_html += (
             f"<div style='display:flex;justify-content:space-between;align-items:center;"
             f"padding:10px 12px;border-bottom:1px solid {P['border_d']};'>"
             f"<div>"
             f"<div style='font-family:Outfit,sans-serif;font-size:12px;font-weight:600;color:{P['cream']};'>"
             f"{row['market']}, {row['admin1']}</div>"
-            f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>"
-            f"Last Update: {last_update}</div>"
             f"</div>"
             f"<div style='display:flex;align-items:center;gap:8px;'>"
             f"<span style='font-family:\"JetBrains Mono\",monospace;font-size:13px;font-weight:700;color:{clr};'>"
@@ -343,85 +325,14 @@ with col_side:
     # mini map thumbnail placeholder
     st.markdown(
         f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:6px;overflow:hidden;'>"
-        f"<div style='padding:14px 16px;border-bottom:1px solid {P['border']};display:flex;justify-content:space-between;align-items:center;'>"
+        f"<div style='padding:14px 16px;display:flex;justify-content:space-between;align-items:center;'>"
         f"<span style='font-family:Outfit,sans-serif;font-size:14px;font-weight:700;color:{P['cream']};'>Volatility Alerts</span>"
         f"</div>"
         f"{alerts_html}"
-        f"<div style='background:{P['surface']};height:110px;display:flex;align-items:center;justify-content:center;'>"
-        f"<div style='text-align:center;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['dim']};'>SPATIAL #1/SPIB</div>"
-        f"<a href='1_Analisis_Spasial' style='color:{P['secondary']};font-family:\"JetBrains Mono\",monospace;"
-        f"font-size:10px;text-decoration:none;'>OPEN MAP ↗</a>"
-        f"</div></div>"
         f"</div>",
         unsafe_allow_html=True
     )
 
-st.markdown("---")
 
-# ── HARVEST READINESS & RISK FACTORS ─────────────────────────────────────────
-c_harv, c_risk = st.columns(2)
-
-with c_harv:
-    st.markdown(
-        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;padding:20px;height:100%;'>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:16px;font-weight:700;color:{P['cream']};margin-bottom:20px;'>Harvest Readiness Index</div>"
-        
-        f"<div style='display:flex;align-items:center;gap:16px;margin-bottom:20px;'>"
-        f"<div style='width:40px;height:40px;border-radius:8px;background:{P['surface_hi']};display:flex;align-items:center;justify-content:center;color:{P['secondary']};font-size:18px;'>🌱</div>"
-        f"<div style='flex:1;'>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:14px;font-weight:600;color:{P['cream']};'>Banyuwangi Hub</div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:11px;color:{P['muted']};'>Est. 120 Tons / Week</div>"
-        f"</div>"
-        f"<div style='text-align:right;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:11px;color:{P['cream']};margin-bottom:4px;'>Ready: <span style='font-weight:700;'>85%</span></div>"
-        f"<div style='width:100px;height:4px;background:{P['surface_hi']};border-radius:2px;'><div style='width:85%;height:4px;background:{P['secondary']};border-radius:2px;'></div></div>"
-        f"</div>"
-        f"</div>"
-        
-        f"<div style='display:flex;align-items:center;gap:16px;'>"
-        f"<div style='width:40px;height:40px;border-radius:8px;background:{P['surface_hi']};display:flex;align-items:center;justify-content:center;color:{P['primary']};font-size:18px;'>🌱</div>"
-        f"<div style='flex:1;'>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:14px;font-weight:600;color:{P['cream']};'>Magelang Hub</div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:11px;color:{P['muted']};'>Est. 45 Tons / Week</div>"
-        f"</div>"
-        f"<div style='text-align:right;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:11px;color:{P['cream']};margin-bottom:4px;'>Ready: <span style='font-weight:700;'>42%</span></div>"
-        f"<div style='width:100px;height:4px;background:{P['surface_hi']};border-radius:2px;'><div style='width:42%;height:4px;background:{P['primary']};border-radius:2px;'></div></div>"
-        f"</div>"
-        f"</div>"
-        f"</div>",
-        unsafe_allow_html=True
-    )
-
-with c_risk:
-    st.markdown(
-        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;padding:20px;height:100%;'>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:16px;font-weight:700;color:{P['cream']};margin-bottom:16px;'>External Risk Factors</div>"
-        f"<div style='display:grid;grid-template-columns:1fr 1fr;gap:12px;'>"
-        
-        f"<div style='border:1px solid {P['border']};border-radius:6px;padding:14px;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;margin-bottom:6px;'>FUEL PRICE IMPACT</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:18px;font-weight:700;color:{P['secondary']};'>+4.2% <span style='font-family:Outfit,sans-serif;font-size:11px;font-weight:400;color:{P['muted']};'>Logistics</span></div>"
-        f"</div>"
-        
-        f"<div style='border:1px solid {P['border']};border-radius:6px;padding:14px;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;margin-bottom:6px;'>IMPORT COMPETITION</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:18px;font-weight:700;color:{P['cream']};'>-1.5% <span style='font-family:Outfit,sans-serif;font-size:11px;font-weight:400;color:{P['muted']};'>Market<br>Sat.</span></div>"
-        f"</div>"
-        
-        f"<div style='border:1px solid {P['border']};border-radius:6px;padding:14px;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;margin-bottom:6px;'>WEATHER INDEX</div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:18px;font-weight:700;color:{P['tertiary']};display:flex;align-items:center;gap:6px;'>SEVERE 🌀</div>"
-        f"</div>"
-        
-        f"<div style='border:1px solid {P['border']};border-radius:6px;padding:14px;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;margin-bottom:6px;'>CURRENCY STABILITY</div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:18px;font-weight:700;color:{P['cream']};'>STABLE <span style='font-size:11px;font-weight:400;color:{P['muted']};'>IDR/USD</span></div>"
-        f"</div>"
-        
-        f"</div></div>",
-        unsafe_allow_html=True
-    )
 
 footer()

@@ -74,74 +74,7 @@ mdf["roll12_std"]  = mdf["Price"].rolling(12).std()
 mdf["cv"] = mdf["roll12_std"] / mdf["MA12"] * 100
 annual_cv = mdf["cv"].iloc[-1] if not pd.isna(mdf["cv"].iloc[-1]) else 0
 
-# ── TOP METRICS ROW ───────────────────────────────────────────────────────────
-c_score, c_cv, c_peak = st.columns([1, 1, 2.2])
 
-with c_score:
-    score = min(100, max(0, 50 + (mom_pct * 2)))
-    st.markdown(
-        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:6px;"
-        f"padding:16px 20px;position:relative;overflow:hidden;'>"
-        f"<div style='position:absolute;top:0;left:0;right:0;height:2px;"
-        f"background:linear-gradient(90deg,{P['primary']},{P['secondary']},{P['tertiary']});'></div>"
-        f"<div style='position:absolute;top:0;right:0;width:80px;height:80px;"
-        f"background:radial-gradient(circle at top right,{P['primary_a']},transparent 70%);pointer-events:none;'></div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;font-weight:700;"
-        f"letter-spacing:0.12em;text-transform:uppercase;color:{P['muted']};margin-bottom:6px;'>MOMENTUM SCORE</div>"
-        f"<div style='display:flex;justify-content:space-between;align-items:baseline;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:32px;font-weight:700;color:{P['cream']};'>{score:.1f}</div>"
-        f"<div style='color:{P['muted']};'>{'↗' if mom_pct>0 else '↘'}</div>"
-        f"</div>"
-        f"<div style='background:{P['surface']};border-radius:3px;height:4px;margin:12px 0;'>"
-        f"<div style='background:linear-gradient(90deg,{P['primary']},{P['secondary']});height:4px;"
-        f"border-radius:3px;width:{score:.0f}%;'></div></div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>"
-        f"{'Extreme Bullish' if score>75 else 'Bearish'} Convergence</div>"
-        f"</div>",
-        unsafe_allow_html=True
-    )
-
-with c_cv:
-    # little bar chart for last 6 months CV
-    last6_cv = mdf["cv"].tail(6).fillna(0).values
-    max_cv = max(last6_cv) if len(last6_cv) > 0 and max(last6_cv) > 0 else 1
-    bars = "".join([
-        f"<div style='width:12px;height:{max(10, v/max_cv*40):.0f}px;background:{P['tertiary'] if v>20 else P['surface_top']};'></div>"
-        for v in last6_cv
-    ])
-    st.markdown(
-        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:6px;"
-        f"padding:16px 20px;position:relative;overflow:hidden;'>"
-        f"<div style='position:absolute;top:0;left:0;right:0;height:2px;"
-        f"background:linear-gradient(90deg,{P['secondary']},{P['tertiary']});'></div>"
-        f"<div style='position:absolute;top:0;right:0;width:80px;height:80px;"
-        f"background:radial-gradient(circle at top right,{P['tertiary_a']},transparent 70%);pointer-events:none;'></div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;font-weight:700;"
-        f"letter-spacing:0.12em;text-transform:uppercase;color:{P['muted']};margin-bottom:6px;'>ANNUAL CV</div>"
-        f"<div style='display:flex;justify-content:space-between;align-items:baseline;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:32px;font-weight:700;color:{P['tertiary']};'>{annual_cv:.1f}%</div>"
-        f"<div style='color:{P['tertiary']};font-size:24px;font-weight:700;'>!</div>"
-        f"</div>"
-        f"<div style='display:flex;align-items:flex-end;gap:4px;height:45px;margin-top:5px;'>{bars}</div>"
-        f"</div>",
-        unsafe_allow_html=True
-    )
-
-with c_peak:
-    st.markdown(
-        f"<div style='background:{P['surface']};border:1px solid {P['border']};border-radius:6px;"
-        f"padding:24px;height:100%;display:flex;justify-content:space-between;align-items:center;'>"
-        f"<div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:16px;font-weight:700;color:{P['cream']};margin-bottom:6px;'>"
-        f"Peak Season Forecast</div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:13px;color:{P['muted']};line-height:1.5;max-width:300px;'>"
-        f"The upcoming holiday surge is expected to hit Q4 with a +22% price delta compared to historical medians."
-        f"</div></div>"
-        f"</div>",
-        unsafe_allow_html=True
-    )
-
-st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
 
 # ── REGIONAL PRICE CYCLE ANALYSIS (Smooth line) ──────────────────────────────
 mdf_recent = mdf[mdf["Date"] >= "2020-01-01"].copy()
@@ -216,8 +149,8 @@ st.plotly_chart(fig_cycle, use_container_width=True, config={"displayModeBar": F
 
 st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
 
-# ── MAIN TRENDS & HEATMAP ─────────────────────────────────────────────────────
-c_main, c_heat = st.columns([2.5, 1])
+# ── MAIN TRENDS ───────────────────────────────────────────────────────────────
+c_main = st.container()
 
 with c_main:
     mdf_plot = mdf[mdf["Date"] >= "2020-01-01"]
@@ -239,7 +172,7 @@ with c_main:
         mode="lines", name="MA3",
         line=dict(color=P["secondary"], width=1.5),
     ))
-    lo_h = blayout("17-Year Price Trajectory (Regional Context)", h=380, legend=True)
+    lo_h = blayout("Price Trajectory (2020 - Present)", h=380, legend=True)
     lo_h["plot_bgcolor"] = P["card"]
     lo_h["paper_bgcolor"] = P["card"]
     lo_h["margin"] = dict(l=20, r=20, t=60, b=20)
@@ -259,7 +192,7 @@ with c_main:
     growth = (mdf["Price"].iloc[-1] - mdf["Price"].iloc[0]) / mdf["Price"].iloc[0] * 100
     # Bottom metrics
     st.markdown(
-        f"<div style='display:grid;grid-template-columns:repeat(4, 1fr);gap:16px;margin-top:10px;'>"
+        f"<div style='display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;margin-top:10px;'>"
         f"<div style='border:1px solid {P['border']};border-radius:4px;padding:12px;'>"
         f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>LONG TERM AVG</div>"
         f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};font-weight:700;'>Rp {lt_avg/1000:,.2f}k</div>"
@@ -272,121 +205,13 @@ with c_main:
         f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>TOTAL GROWTH</div>"
         f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};font-weight:700;'>+{growth:.0f}%</div>"
         f"</div>"
-        f"<div style='border:1px solid {P['border']};border-radius:4px;padding:12px;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>CONFIDENCE</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};font-weight:700;'>92.4%</div>"
-        f"</div>"
         f"</div></div>",
         unsafe_allow_html=True
     )
 
-with c_heat:
-    # Monthly Heatmap (3 cols x 4 rows)
-    mdf_m = mdf.copy()
-    mdf_m["month"] = mdf_m["Date"].dt.month
-    mon_avg = mdf_m.groupby("month")["Price"].mean()
-    min_m, max_m = mon_avg.min(), mon_avg.max()
-
-    def get_hm_color(norm):
-        if norm > 0.85: return P["tertiary"]      # brightest peak (e.g. Dec)
-        if norm > 0.65: return "#E8A87C"           # peach — notable secondary peak
-        if norm > 0.45: return "#B06A4A"           # muted rose-brown
-        if norm > 0.25: return P["surface_hi"]
-        return P["surface"]                        # low season
-
-    mon_norm = {i: ((mon_avg.get(i, min_m) - min_m) / (max_m - min_m) if max_m > min_m else 0) for i in range(1, 13)}
-    # highlight the top-3 months with an accent border, matching the reference design
-    top3_months = sorted(mon_norm, key=mon_norm.get, reverse=True)[:3]
-
-    hm_html = "<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:20px 0;'>"
-    for i in range(1, 13):
-        norm = mon_norm[i]
-        c = get_hm_color(norm)
-        if i in top3_months:
-            border = f"1.5px solid {P['tertiary'] if norm == max(mon_norm.values()) else P['secondary']}"
-        else:
-            border = "none"
-        hm_html += (
-            f"<div>"
-            f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-align:center;margin-bottom:4px;'>{MONTH_ABB[i-1].upper()}</div>"
-            f"<div style='height:36px;background:{c};border-radius:4px;border:{border};box-sizing:border-box;'></div>"
-            f"</div>"
-        )
-    hm_html += "</div>"
-
-    st.markdown(
-        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;padding:20px;height:480px;'>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:18px;font-weight:700;color:{P['cream']};'>Monthly Heatmap</div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>Seasonal Intensity Index</div>"
-        f"{hm_html}"
-        f"</div>",
-        unsafe_allow_html=True
-    )
 
 st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
 
-# ── ANNUAL VOLATILITY BREAKDOWN ───────────────────────────────────────────────
-st.markdown(
-    f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;'>"
-    f"<h3 style='font-family:Outfit,sans-serif;margin:0;font-size:17px;color:{P['cream']};'>Annual Volatility Breakdown</h3>"
-    f"<div style='display:flex;align-items:center;gap:6px;'>"
-    f"<span style='width:7px;height:7px;border-radius:50%;background:{P['primary']};display:inline-block;'></span>"
-    f"<span style='font-family:\"JetBrains Mono\",monospace;font-size:11px;font-weight:700;"
-    f"letter-spacing:0.08em;color:{P['primary']};'>CRITICAL ALERTS ACTIVE</span>"
-    f"</div></div>",
-    unsafe_allow_html=True
-)
 
-mdf_yr = mdf.copy()
-mdf_yr["year"] = mdf_yr["Date"].dt.year
-yr_stats = mdf_yr.groupby("year")["Price"].agg(["mean", "std", "max"]).reset_index()
-yr_stats["cv"] = yr_stats["std"] / yr_stats["mean"] * 100
-yr_stats = yr_stats.sort_values("year", ascending=False).head(5)
-
-rows_html = ""
-for i, r in yr_stats.iterrows():
-    y_str = f"{int(r['year'])} (YTD)" if i == 0 else str(int(r['year']))
-    cv = r["cv"]
-    if cv > 20:
-        stat_lbl = "CRITICAL"
-        stat_clr = P["primary"]
-        cv_clr = P["primary"]
-    elif cv > 10:
-        stat_lbl = "MODERATE"
-        stat_clr = P["secondary"]
-        cv_clr = P["secondary"]
-    else:
-        stat_lbl = "STABLE"
-        stat_clr = P["muted"]
-        cv_clr = P["cream"]
-
-    rows_html += (
-        f"<div style='display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr 1fr;align-items:center;"
-        f"padding:16px 20px;border-bottom:1px solid {P['border_d']};'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:13px;color:{P['cream']};'>{y_str}</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:13px;color:{P['cream']};'>Rp {r['mean']/1000:.2f}k</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:13px;color:{P['muted']};'>{r['std']/1000:.2f}</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:13px;font-weight:700;color:{cv_clr};'>{cv:.1f}%</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:13px;color:{P['cream']};'>Rp {r['max']/1000:.2f}k</div>"
-        f"<div><span style='border:1px solid {stat_clr};color:{stat_clr};font-family:\"JetBrains Mono\",monospace;"
-        f"font-size:9px;font-weight:700;padding:4px 8px;border-radius:4px;'>{stat_lbl}</span></div>"
-        f"</div>"
-    )
-
-st.markdown(
-    f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;overflow:hidden;'>"
-    f"<div style='display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr 1fr;padding:12px 20px;"
-    f"border-bottom:1px solid {P['border']};background:{P['surface']};'>"
-    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>YEAR</div>"
-    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>MEAN PRICE</div>"
-    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>STD DEV</div>"
-    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>COEFF. VAR (CV)</div>"
-    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>MAX SPIKE</div>"
-    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>STATUS</div>"
-    f"</div>"
-    f"{rows_html}"
-    f"</div>",
-    unsafe_allow_html=True
-)
 
 footer()
