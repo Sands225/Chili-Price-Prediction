@@ -1,5 +1,5 @@
 # =============================================================================
-# SHARED UTILITIES — Chili Price Intelligence Dashboard
+# SHARED UTILITIES — Chili Price Intelligence / Heat & Spice
 # Seleksi Internal Satria Data 2026
 # =============================================================================
 
@@ -15,28 +15,46 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # =============================================================================
-# DESIGN TOKENS
+# DESIGN TOKENS — Heat & Spice "Thermal Spectrum"
 # =============================================================================
 
 P = {
-    "bg":        "#080B11",
-    "card":      "#0F1420",
-    "surface":   "#171F30",
-    "border":    "#212B3E",
-    "border_d":  "#141B29",
-    "crimson":   "#F43F5E",
-    "crim_a":    "rgba(244, 63, 94, 0.12)",
-    "emerald":   "#10B981",
-    "emerald_a": "rgba(16, 185, 129, 0.12)",
-    "amber":     "#F59E0B",
-    "amber_a":   "rgba(245, 158, 11, 0.12)",
-    "indigo":    "#6366F1",
-    "indigo_a":  "rgba(99, 102, 241, 0.12)",
-    "cream":     "#F8FAFC",
-    "muted":     "#94A3B8",
-    "dim":       "#475569",
-    "crim_mid":  "#BE123C",
-    "amber_mid": "#B45309",
+    # ── Surfaces
+    "bg":          "#051424",
+    "card":        "#0D1C2D",
+    "surface":     "#122131",
+    "surface_hi":  "#1C2B3C",
+    "surface_top": "#273647",
+    # ── Borders
+    "border":      "#1C2B3C",
+    "border_d":    "#0D1C2D",
+    "outline":     "#5C4039",
+    # ── Thermal Accents
+    "primary":     "#FF5625",   # Chili Red — forecast line, CTA, critical alerts
+    "primary_a":   "rgba(255,86,37,0.12)",
+    "secondary":   "#F97316",   # Orange — confidence intervals, secondary trends
+    "secondary_a": "rgba(249,115,22,0.12)",
+    "tertiary":    "#FBBF24",   # Amber — peak indicators, warnings, highlights
+    "tertiary_a":  "rgba(251,191,36,0.12)",
+    # ── Text
+    "cream":       "#D4E4FA",
+    "on_surface":  "#D4E4FA",
+    "muted":       "#94A3B8",
+    "dim":         "#5C7A99",
+    # ── Semantic
+    "emerald":     "#22C55E",
+    "emerald_a":   "rgba(34,197,94,0.12)",
+    "red":         "#EF4444",
+    "red_a":       "rgba(239,68,68,0.12)",
+    # ── Aliases for legacy compat
+    "crimson":     "#FF5625",
+    "crim_a":      "rgba(255,86,37,0.12)",
+    "amber":       "#F97316",
+    "amber_a":     "rgba(249,115,22,0.12)",
+    "indigo":      "#FBBF24",
+    "indigo_a":    "rgba(251,191,36,0.12)",
+    "amber_mid":   "#E86010",
+    "crim_mid":    "#CC3A14",
 }
 
 MONTH_ABB  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
@@ -60,105 +78,265 @@ COMMODITY_LABELS = {
 }
 
 # =============================================================================
-# CSS INJECTION
+# CSS INJECTION — Heat & Spice "Dark Lab"
 # =============================================================================
 
 def inject_css():
     st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 html, body, .stApp, [data-testid="stAppViewContainer"] {{
     background-color: {P['bg']} !important;
-    font-family: 'Inter', -apple-system, sans-serif !important;
+    font-family: 'Outfit', -apple-system, sans-serif !important;
     color: {P['cream']} !important;
 }}
 [data-testid="block-container"] {{
-    padding: 1.8rem 3.2rem 3rem !important;
-    max-width: 1480px;
+    padding: 1.4rem 2.8rem 3rem !important;
+    max-width: 1560px;
 }}
+
+/* ── SIDEBAR ── */
 [data-testid="stSidebar"] {{
     background-color: {P['card']} !important;
     border-right: 1px solid {P['border']} !important;
+    position: relative;
+}}
+[data-testid="stSidebar"]::after {{
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, {P['primary']}, {P['secondary']});
+    opacity: 0.7;
 }}
 [data-testid="stSidebarContent"] {{
     padding-top: 1rem !important;
 }}
+
+/* ── METRIC CARDS — Heat & Spice style ── */
 [data-testid="metric-container"] {{
     background: {P['card']} !important;
     border: 1px solid {P['border']} !important;
-    border-radius: 8px !important;
-    padding: 1.1rem 1.3rem !important;
+    border-radius: 6px !important;
+    padding: 1rem 1.2rem !important;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}}
+[data-testid="metric-container"]::before {{
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, {P['primary']}, {P['secondary']}, {P['tertiary']});
 }}
 [data-testid="metric-container"]::after {{
     content: '';
     position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, {P['crimson']}, {P['amber']}, {P['emerald']});
+    top: 0; right: 0;
+    width: 80px; height: 80px;
+    background: radial-gradient(circle at top right, {P['primary_a']}, transparent 70%);
+    pointer-events: none;
 }}
 [data-testid="stMetricLabel"] p {{
-    font-size: 10.5px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 10px !important;
     font-weight: 700 !important;
-    letter-spacing: 0.1em !important;
+    letter-spacing: 0.12em !important;
     text-transform: uppercase !important;
     color: {P['muted']} !important;
     margin: 0 !important;
 }}
 [data-testid="stMetricValue"] {{
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 21px !important;
-    font-weight: 600 !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
     color: {P['cream']} !important;
-    line-height: 1.3 !important;
+    line-height: 1.2 !important;
 }}
 [data-testid="stMetricDelta"] span {{
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 11px !important;
 }}
-h1, h2, h3, h4 {{ color: {P['cream']} !important; font-weight: 700 !important; letter-spacing: -0.02em; }}
-hr {{ border: none !important; border-top: 1px solid {P['border_d']} !important; margin: 1.8rem 0 !important; }}
+
+/* ── TYPOGRAPHY ── */
+h1, h2, h3, h4 {{
+    font-family: 'Outfit', sans-serif !important;
+    color: {P['cream']} !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em;
+}}
+hr {{
+    border: none !important;
+    border-top: 1px solid {P['border_d']} !important;
+    margin: 1.6rem 0 !important;
+}}
+
+/* ── INPUTS & SELECTS ── */
 [data-baseweb="select"] > div {{
     background-color: {P['surface']} !important;
     border-color: {P['border']} !important;
     color: {P['cream']} !important;
-    border-radius: 6px !important;
+    border-radius: 4px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 12px !important;
 }}
 [data-baseweb="select"] svg {{ fill: {P['muted']} !important; }}
 [data-baseweb="popover"] ul {{ background: {P['surface']} !important; border-color: {P['border']} !important; }}
-[data-baseweb="popover"] li {{ color: {P['cream']} !important; }}
-[data-baseweb="popover"] li:hover {{ background: {P['border']} !important; }}
+[data-baseweb="popover"] li {{ color: {P['cream']} !important; font-family: 'Outfit', sans-serif !important; font-size: 13px !important; }}
+[data-baseweb="popover"] li:hover {{ background: {P['surface_hi']} !important; }}
 div[data-baseweb="input"] > div {{
     background-color: {P['surface']} !important;
     border-color: {P['border']} !important;
     color: {P['cream']} !important;
-    border-radius: 6px !important;
+    border-radius: 4px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 12px !important;
 }}
-[data-testid="stDataFrame"] {{ background: {P['card']} !important; border-radius: 8px !important; }}
-::-webkit-scrollbar {{ width: 6px; height: 6px; }}
+div[data-baseweb="input"] > div:focus-within {{
+    border-color: {P['secondary']} !important;
+    box-shadow: 0 0 0 2px {P['secondary_a']} !important;
+}}
+
+/* ── DATAFRAME ── */
+[data-testid="stDataFrame"] {{
+    background: {P['card']} !important;
+    border-radius: 6px !important;
+    border: 1px solid {P['border']} !important;
+}}
+
+/* ── TABS ── */
+[data-baseweb="tab-list"] {{
+    background: transparent !important;
+    border-bottom: 1px solid {P['border']} !important;
+    gap: 4px !important;
+}}
+[data-baseweb="tab"] {{
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    color: {P['dim']} !important;
+    background: transparent !important;
+    border: 1px solid {P['border']} !important;
+    border-bottom: none !important;
+    border-radius: 4px 4px 0 0 !important;
+    padding: 6px 16px !important;
+}}
+[aria-selected="true"][data-baseweb="tab"] {{
+    color: {P['primary']} !important;
+    background: {P['card']} !important;
+    border-color: {P['primary']} !important;
+}}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar {{ width: 5px; height: 5px; }}
 ::-webkit-scrollbar-track {{ background: {P['bg']}; }}
-::-webkit-scrollbar-thumb {{ background: {P['border']}; border-radius: 4px; }}
-::-webkit-scrollbar-thumb:hover {{ background: {P['crimson']}; }}
+::-webkit-scrollbar-thumb {{ background: {P['border']}; border-radius: 3px; }}
+::-webkit-scrollbar-thumb:hover {{ background: {P['primary']}; }}
+
+/* ── HIDE STREAMLIT CHROME ── */
 #MainMenu, footer {{ visibility: hidden !important; }}
 [data-testid="stToolbar"] {{ display: none !important; }}
 [data-testid="stDecoration"] {{ display: none !important; }}
+
+/* ── SIDEBAR NAV ── */
+[data-testid="stSidebarNav"] {{
+    padding-top: 10px !important;
+}}
 [data-testid="stSidebarNavItems"] a {{
     color: {P['muted']} !important;
     border-radius: 6px !important;
-    font-size: 13px !important;
-    padding: 6px 10px !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    padding: 10px 16px !important;
+    margin: 4px 16px !important;
+    transition: all 0.15s ease;
+    display: flex !important;
+    align-items: center !important;
+    text-decoration: none !important;
 }}
 [data-testid="stSidebarNavItems"] a:hover {{
     background: {P['surface']} !important;
     color: {P['cream']} !important;
 }}
 [data-testid="stSidebarNavItems"] a[aria-current="page"] {{
-    background: {P['surface']} !important;
-    color: {P['emerald']} !important;
+    background: {P['secondary']} !important;
+    color: #fff !important;
     font-weight: 600 !important;
+}}
+[data-testid="stSidebarNavItems"] a span {{
+    display: none !important;
+}}
+[data-testid="stSidebarNavItems"] a::before {{
+    content: '';
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    margin-right: 12px;
+    background-color: currentColor;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+}}
+[data-testid="stSidebarNavItems"] li:nth-child(1) a::before {{
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='7' height='7'/%3E%3Crect x='14' y='3' width='7' height='7'/%3E%3Crect x='14' y='14' width='7' height='7'/%3E%3Crect x='3' y='14' width='7' height='7'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='7' height='7'/%3E%3Crect x='14' y='3' width='7' height='7'/%3E%3Crect x='14' y='14' width='7' height='7'/%3E%3Crect x='3' y='14' width='7' height='7'/%3E%3C/svg%3E");
+}}
+[data-testid="stSidebarNavItems"] li:nth-child(1) a::after {{
+    content: 'Overview';
+}}
+[data-testid="stSidebarNavItems"] li:nth-child(2) a::before {{
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21'/%3E%3Cline x1='9' y1='3' x2='9' y2='18'/%3E%3Cline x1='15' y1='6' x2='15' y2='21'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21'/%3E%3Cline x1='9' y1='3' x2='9' y2='18'/%3E%3Cline x1='15' y1='6' x2='15' y2='21'/%3E%3C/svg%3E");
+}}
+[data-testid="stSidebarNavItems"] li:nth-child(2) a::after {{
+    content: 'Spatial';
+}}
+[data-testid="stSidebarNavItems"] li:nth-child(3) a::before {{
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='23 6 13.5 15.5 8.5 10.5 1 18'/%3E%3Cpolyline points='17 6 23 6 23 12'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='23 6 13.5 15.5 8.5 10.5 1 18'/%3E%3Cpolyline points='17 6 23 6 23 12'/%3E%3C/svg%3E");
+}}
+[data-testid="stSidebarNavItems"] li:nth-child(3) a::after {{
+    content: 'Trends';
+}}
+[data-testid="stSidebarNavItems"] li:nth-child(4) a::before {{
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='20' x2='18' y2='10'/%3E%3Cline x1='12' y1='20' x2='12' y2='4'/%3E%3Cline x1='6' y1='20' x2='6' y2='14'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='20' x2='18' y2='10'/%3E%3Cline x1='12' y1='20' x2='12' y2='4'/%3E%3Cline x1='6' y1='20' x2='6' y2='14'/%3E%3C/svg%3E");
+}}
+[data-testid="stSidebarNavItems"] li:nth-child(4) a::after {{
+    content: 'Model';
+}}
+
+/* ── BUTTONS ── */
+[data-testid="stButton"] button {{
+    background: transparent !important;
+    border: 1px solid {P['muted']} !important;
+    color: {P['cream']} !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.08em !important;
+    border-radius: 4px !important;
+    transition: all 0.2s ease;
+}}
+[data-testid="stButton"] button:hover {{
+    border-color: {P['secondary']} !important;
+    color: {P['secondary']} !important;
+    box-shadow: 0 0 8px {P['secondary_a']};
+}}
+
+/* ── SPINNER ── */
+[data-testid="stSpinner"] {{ color: {P['secondary']} !important; }}
+
+/* ── PROGRESS BAR ── */
+[data-testid="stProgress"] > div > div {{
+    background: linear-gradient(90deg, {P['primary']}, {P['secondary']}) !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -170,7 +348,6 @@ div[data-baseweb="input"] > div {{
 
 @st.cache_data(show_spinner=False)
 def load_wfp_raw(path: str) -> pd.DataFrame:
-    """Load and parse WFP food prices CSV dataset."""
     rows, header = [], None
     with open(path, encoding="utf-8") as f:
         reader = csv.reader(f)
@@ -194,7 +371,6 @@ def load_wfp_raw(path: str) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def get_chili_wfp(path: str, commodity_type: str = "birds_eye") -> pd.DataFrame:
-    """Filter dataset by chili variety."""
     df = load_wfp_raw(path)
     ch = (df[df["commodity"].str.contains("Chili|chili", na=False, regex=True)]
           .dropna(subset=["date", "price"]).copy())
@@ -207,8 +383,23 @@ def get_chili_wfp(path: str, commodity_type: str = "birds_eye") -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def get_national_monthly(path: str, commodity_type: str = "birds_eye") -> pd.DataFrame:
-    """Compute monthly national average prices."""
     ch = get_chili_wfp(path, commodity_type)
+    m = (
+        ch.groupby(pd.Grouper(key="date", freq="MS"))["price"]
+        .mean().reset_index()
+        .rename(columns={"date": "Date", "price": "Price"})
+    )
+    return m.dropna().sort_values("Date").reset_index(drop=True)
+
+
+@st.cache_data(show_spinner=False)
+def get_provincial_monthly(path: str, commodity_type: str = "birds_eye", province: str = None) -> pd.DataFrame:
+    """Monthly average prices for a specific province (or national if None)."""
+    ch = get_chili_wfp(path, commodity_type)
+    if province and province != "NASIONAL":
+        ch = ch[ch["admin1"] == province]
+    if ch.empty:
+        return pd.DataFrame(columns=["Date", "Price"])
     m = (
         ch.groupby(pd.Grouper(key="date", freq="MS"))["price"]
         .mean().reset_index()
@@ -222,7 +413,6 @@ def get_national_monthly(path: str, commodity_type: str = "birds_eye") -> pd.Dat
 # =============================================================================
 
 def make_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Engineer time-series features for Random Forest model."""
     d = df.copy()
     d["year"]      = d["Date"].dt.year
     d["month"]     = d["Date"].dt.month
@@ -242,12 +432,10 @@ def make_features(df: pd.DataFrame) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def train_wfp_model(path: str, commodity_type: str = "birds_eye") -> dict:
-    """Train Random Forest model and return results dict."""
     mdf  = get_national_monthly(path, commodity_type)
     feat = make_features(mdf)
     sp   = int(len(feat) * 0.82)
     tr, te = feat.iloc[:sp], feat.iloc[sp:]
-
     rf = RandomForestRegressor(
         n_estimators=400, max_depth=7,
         min_samples_leaf=2, random_state=42, n_jobs=-1
@@ -255,22 +443,15 @@ def train_wfp_model(path: str, commodity_type: str = "birds_eye") -> dict:
     rf.fit(tr[FEAT_COLS], tr["Price"])
     pred = rf.predict(te[FEAT_COLS])
     y    = te["Price"].values
-
     mae  = float(mean_absolute_error(y, pred))
     rmse = float(np.sqrt(mean_squared_error(y, pred)))
     mape = float(np.mean(np.abs((y - pred) / np.where(y != 0, y, 1))) * 100)
     r2   = float(1 - np.sum((y - pred) ** 2) / np.sum((y - y.mean()) ** 2))
-
-    return dict(
-        rf=rf, feat=feat, tr=tr, te=te,
-        pred=pred, y=y,
-        mae=mae, rmse=rmse, mape=mape, r2=r2,
-        mdf=mdf
-    )
+    return dict(rf=rf, feat=feat, tr=tr, te=te, pred=pred, y=y,
+                mae=mae, rmse=rmse, mape=mape, r2=r2, mdf=mdf)
 
 
 def forecast_months_ahead(res: dict, n: int = 7) -> pd.DataFrame:
-    """Recursive multi-step forecast using trained RF model."""
     rf   = res["rf"]
     feat = res["feat"].copy()
     rows = []
@@ -296,16 +477,11 @@ def forecast_months_ahead(res: dict, n: int = 7) -> pd.DataFrame:
         }
         X    = pd.DataFrame([row])[FEAT_COLS]
         fval = float(rf.predict(X)[0])
-        # CI widens with horizon (accumulated uncertainty)
         base_ci = float(np.array([t.predict(X)[0] for t in rf.estimators_]).std())
-        ci = base_ci * (1.4 + step * 0.15)  # CI grows with forecast horizon
-        rows.append({
-            "Date": nd, "Forecast": fval,
-            "Lower": max(0.0, fval - ci), "Upper": fval + ci,
-            "step": step + 1
-        })
-        new_row = pd.DataFrame([{"Date": nd, "Price": fval, **row}])
-        feat = pd.concat([feat, new_row], ignore_index=True)
+        ci = base_ci * (1.4 + step * 0.15)
+        rows.append({"Date": nd, "Forecast": fval,
+                     "Lower": max(0.0, fval - ci), "Upper": fval + ci, "step": step + 1})
+        feat = pd.concat([feat, pd.DataFrame([{"Date": nd, "Price": fval, **row}])], ignore_index=True)
     return pd.DataFrame(rows)
 
 
@@ -317,36 +493,36 @@ def blayout(title: str = "", h: int = 380, legend: bool = True,
             y_sfx: str = "", y_fmt: str = ",.0f") -> dict:
     return dict(
         title=dict(
-            text=f"<b style='color:{P['cream']};font-size:12px;font-family:Inter,sans-serif;letter-spacing:0.04em;'>{title}</b>",
-            x=0, xanchor="left", pad=dict(l=4, b=12),
+            text=f"<b style='color:{P['cream']};font-size:12px;font-family:Outfit,sans-serif;letter-spacing:0.02em;'>{title}</b>",
+            x=0, xanchor="left", pad=dict(l=4, b=10),
         ),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter, sans-serif", color=P["muted"], size=11),
+        font=dict(family="Outfit, sans-serif", color=P["muted"], size=11),
         height=h,
         margin=dict(l=10, r=10, t=42, b=10),
         xaxis=dict(
             gridcolor=P["border_d"], linecolor=P["border"],
             tickcolor="rgba(0,0,0,0)",
-            tickfont=dict(size=10, color=P["muted"]),
+            tickfont=dict(size=10, color=P["muted"], family="JetBrains Mono, monospace"),
             zeroline=False,
         ),
         yaxis=dict(
             gridcolor=P["border_d"], linecolor="rgba(0,0,0,0)",
             tickcolor="rgba(0,0,0,0)",
-            tickfont=dict(size=10, color=P["muted"]),
+            tickfont=dict(size=10, color=P["muted"], family="JetBrains Mono, monospace"),
             tickformat=y_fmt, ticksuffix=y_sfx,
             zeroline=False,
         ),
         legend=(dict(
             bgcolor="rgba(0,0,0,0)",
-            font=dict(size=10, color=P["cream"]),
+            font=dict(size=10, color=P["cream"], family="JetBrains Mono, monospace"),
             orientation="h", y=1.08, x=1, xanchor="right"
         ) if legend else dict(visible=False)),
         hovermode="x unified",
         hoverlabel=dict(
             bgcolor=P["surface"],
-            font=dict(color=P["cream"], size=11),
+            font=dict(color=P["cream"], size=11, family="Outfit, sans-serif"),
             bordercolor=P["border"],
         ),
     )
@@ -356,68 +532,102 @@ def blayout(title: str = "", h: int = 380, legend: bool = True,
 # HTML COMPONENT HELPERS
 # =============================================================================
 
+def stat_card(label: str, value: str, sub: str = "", accent: str = None, mono_val: bool = True) -> str:
+    """Premium stat card with top gradient stripe and radial glow."""
+    a = accent or P["primary"]
+    val_font = "font-family:'JetBrains Mono',monospace;" if mono_val else "font-family:'Outfit',sans-serif;"
+    return (
+        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:6px;"
+        f"padding:16px 18px;position:relative;overflow:hidden;'>"
+        f"<div style='position:absolute;top:0;left:0;right:0;height:2px;"
+        f"background:linear-gradient(90deg,{P['primary']},{P['secondary']},{P['tertiary']});'></div>"
+        f"<div style='position:absolute;top:0;right:0;width:80px;height:80px;"
+        f"background:radial-gradient(circle at top right,{a}1A,transparent 70%);pointer-events:none;'></div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;font-weight:700;"
+        f"letter-spacing:0.12em;text-transform:uppercase;color:{P['muted']};margin-bottom:6px;'>{label}</div>"
+        f"<div style='{val_font}font-size:22px;font-weight:700;color:{P['cream']};line-height:1.2;'>{value}</div>"
+        + (f"<div style='font-size:11px;color:{P['muted']};margin-top:4px;'>{sub}</div>" if sub else "")
+        + "</div>"
+    )
+
+
 def insight_card(title: str, body: str, accent: str = None) -> str:
-    a = accent or P["crimson"]
+    a = accent or P["primary"]
     return (
         f"<div style='background:{P['card']};border:1px solid {P['border']};"
-        f"border-left:4px solid {a};border-radius:8px;"
-        f"padding:16px 20px;margin-bottom:18px;'>"
-        f"<div style='font-size:10px;font-weight:800;letter-spacing:0.14em;"
-        f"text-transform:uppercase;color:{a};margin-bottom:6px;'>{title}</div>"
-        f"<div style='font-size:12.5px;color:{P['cream']};line-height:1.65;"
-        f"font-weight:400;'>{body}</div></div>"
+        f"border-left:3px solid {a};border-radius:6px;"
+        f"padding:14px 18px;margin-bottom:16px;'>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;font-weight:700;"
+        f"letter-spacing:0.14em;text-transform:uppercase;color:{a};margin-bottom:6px;'>{title}</div>"
+        f"<div style='font-family:\"Outfit\",sans-serif;font-size:13px;color:{P['cream']};"
+        f"line-height:1.65;font-weight:400;'>{body}</div></div>"
+    )
+
+
+def status_chip(label: str, color: str = None) -> str:
+    c = color or P["primary"]
+    return (
+        f"<span style='background:{c};color:#000;font-family:\"JetBrains Mono\",monospace;"
+        f"font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;"
+        f"border-radius:3px;padding:2px 7px;vertical-align:middle;'>{label}</span>"
     )
 
 
 def section_header(title: str, subtitle: str = "") -> None:
-    """Renders a standardized section header."""
     st.markdown(
-        f"<h3 style='margin-bottom:4px;'>{title}</h3>"
-        + (f"<p style='font-size:12px;color:{P['muted']};margin-bottom:16px;'>{subtitle}</p>" if subtitle else ""),
-        unsafe_allow_html=True
-    )
-
-
-def page_header(supra: str, title: str, desc: str = "") -> None:
-    """Renders the standard top-of-page header block."""
-    st.markdown(
-        f"<div style='padding:8px 0 4px;'>"
-        f"<div style='font-size:9px;font-weight:800;letter-spacing:0.2em;"
-        f"text-transform:uppercase;color:{P['emerald']};margin-bottom:4px;'>{supra}</div>"
-        f"<div style='font-size:26px;font-weight:800;letter-spacing:-0.03em;"
-        f"color:{P['cream']};line-height:1.1;'>{title}</div>"
-        + (f"<div style='margin-top:6px;font-size:12px;color:{P['muted']};'>{desc}</div>" if desc else "")
+        f"<div style='margin-bottom:12px;'>"
+        f"<h3 style='font-family:Outfit,sans-serif;margin-bottom:2px;font-size:17px;'>{title}</h3>"
+        + (f"<p style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};margin:0;'>{subtitle}</p>" if subtitle else "")
         + "</div>",
         unsafe_allow_html=True
     )
-    st.markdown("<br>", unsafe_allow_html=True)
+
+
+def page_header(supra: str, title: str, desc: str = "", right_widget: str = "") -> None:
+    st.markdown(
+        f"<div style='display:flex;justify-content:space-between;align-items:flex-start;"
+        f"padding:4px 0 16px;border-bottom:1px solid {P['border']};margin-bottom:20px;'>"
+        f"<div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;font-weight:700;"
+        f"letter-spacing:0.2em;text-transform:uppercase;color:{P['secondary']};margin-bottom:3px;'>{supra}</div>"
+        f"<div style='font-family:Outfit,sans-serif;font-size:24px;font-weight:800;"
+        f"letter-spacing:-0.03em;color:{P['cream']};line-height:1.1;'>{title}</div>"
+        + (f"<div style='font-family:Outfit,sans-serif;margin-top:5px;font-size:12px;color:{P['muted']};'>{desc}</div>" if desc else "")
+        + f"</div>{right_widget}</div>",
+        unsafe_allow_html=True
+    )
 
 
 def footer() -> None:
     st.markdown("---")
     st.markdown(
-        f"<div style='text-align:center;padding:10px 0 4px;font-size:11px;color:{P['dim']};'>"
-        f"Chili Price Intelligence Platform &nbsp;&middot;&nbsp; "
-        f"Data: WFP Food Prices Indonesia &nbsp;&middot;&nbsp; Seleksi Internal Satria Data 2026"
-        f"</div>",
+        f"<div style='display:flex;justify-content:space-between;align-items:center;"
+        f"padding:8px 0 2px;'>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['dim']};'>"
+        f"© 2025 SPICE ANALYTICA · ENGINE: HEAT-1 · GPL COMPLIANT</div>"
+        f"<div style='display:flex;gap:8px;align-items:center;'>"
+        f"<span style='width:7px;height:7px;border-radius:50%;background:{P['emerald']};display:inline-block;'></span>"
+        f"<span style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['dim']};'>SYSTEMS NOMINAL</span>"
+        f"</div></div>",
         unsafe_allow_html=True
     )
 
 
 # =============================================================================
-# SIDEBAR RENDERER (shared across all pages)
+# SIDEBAR RENDERER
 # =============================================================================
 
 def render_sidebar(path: str) -> str:
-    """Render commodity selector + dataset summary in sidebar. Returns selected commodity key."""
     with st.sidebar:
+        # Brand
         st.markdown(
-            f"<div style='padding:6px 0 10px;'>"
-            f"<div style='font-size:9px;font-weight:800;letter-spacing:0.18em;"
-            f"text-transform:uppercase;color:{P['emerald']};margin-bottom:4px;'>"
-            f"WFP FOOD PRICES — INDONESIA</div>"
-            f"<div style='font-size:17px;font-weight:800;color:{P['cream']};line-height:1.2;margin-bottom:14px;'>"
-            f"Chili Price Intelligence</div>"
+            f"<div style='padding:6px 0 14px;'>"
+            f"<div style='font-family:Outfit,sans-serif;font-size:20px;font-weight:800;"
+            f"color:{P['cream']};letter-spacing:-0.02em;line-height:1;'>"
+            f"<span style='color:{P['primary']};'>Heat</span> & Spice</div>"
+            f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;font-weight:700;"
+            f"letter-spacing:0.14em;text-transform:uppercase;color:{P['dim']};margin-top:3px;'>"
+            f"SPATIAL INTEL v0.3</div>"
             f"</div>",
             unsafe_allow_html=True
         )
@@ -430,6 +640,7 @@ def render_sidebar(path: str) -> str:
             key="nav_commodity_type"
         )
 
+        # Dataset stats
         chili_preview = get_chili_wfp(path, commodity_sel)
         avg_p = chili_preview["price"].mean() if not chili_preview.empty else 0
         min_p = chili_preview["price"].min()  if not chili_preview.empty else 0
@@ -438,27 +649,14 @@ def render_sidebar(path: str) -> str:
 
         st.markdown(
             f"<div style='background:{P['surface']};border:1px solid {P['border']};"
-            f"border-radius:8px;padding:14px;margin:10px 0;'>"
-            f"<div style='font-size:9px;font-weight:800;letter-spacing:0.12em;"
-            f"text-transform:uppercase;color:{P['amber']};margin-bottom:8px;'>RINGKASAN DATASET</div>"
-            f"<div style='font-size:11px;color:{P['muted']};line-height:1.9;'>"
-            f"&bull; Total Observasi: <b style='color:{P['cream']};'>{n_obs:,}</b><br>"
-            f"&bull; Rata-rata: <b style='color:{P['emerald']};'>Rp {avg_p:,.0f}/kg</b><br>"
-            f"&bull; Terendah: <b style='color:{P['cream']};'>Rp {min_p:,.0f}/kg</b><br>"
-            f"&bull; Tertinggi: <b style='color:{P['cream']};'>Rp {max_p:,.0f}/kg</b>"
-            f"</div></div>",
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            f"<div style='margin-top:8px;'>"
-            f"<div style='font-size:9px;font-weight:800;letter-spacing:0.12em;"
-            f"text-transform:uppercase;color:{P['dim']};margin-bottom:8px;'>MODUL ANALISIS</div>"
-            f"<div style='font-size:11px;color:{P['dim']};line-height:2.1;'>"
-            f"&#9632;&nbsp; Overview Eksekutif<br>"
-            f"&#9632;&nbsp; Analisis Spasial<br>"
-            f"&#9632;&nbsp; Tren &amp; Musiman<br>"
-            f"&#9632;&nbsp; Model Proyeksi"
+            f"border-radius:4px;padding:12px;margin:10px 16px;'>"
+            f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;font-weight:700;"
+            f"letter-spacing:0.12em;text-transform:uppercase;color:{P['tertiary']};margin-bottom:7px;'>DATASET OVERVIEW</div>"
+            f"<div style='font-family:Outfit,sans-serif;font-size:11px;color:{P['muted']};line-height:2.0;'>"
+            f"Total Observasi &nbsp;<b style='color:{P['cream']};font-family:\"JetBrains Mono\",monospace;'>{n_obs:,}</b><br>"
+            f"Rata-rata &nbsp;<b style='color:{P['secondary']};font-family:\"JetBrains Mono\",monospace;'>Rp {avg_p:,.0f}/kg</b><br>"
+            f"Terendah &nbsp;<b style='color:{P['cream']};font-family:\"JetBrains Mono\",monospace;'>Rp {min_p:,.0f}/kg</b><br>"
+            f"Tertinggi &nbsp;<b style='color:{P['cream']};font-family:\"JetBrains Mono\",monospace;'>Rp {max_p:,.0f}/kg</b>"
             f"</div></div>",
             unsafe_allow_html=True
         )

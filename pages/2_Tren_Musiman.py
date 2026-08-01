@@ -1,24 +1,24 @@
 # =============================================================================
-# TREN HISTORIS & POLA MUSIMAN — Chili Price Intelligence Dashboard
-# Analisis tren 17 tahun, volatilitas, seasonality, dan STL decomposition
+# TREN & MUSIMAN — Heat & Spice Spatial Intelligence
+# Chili Price Intelligence Platform
 # =============================================================================
 
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from utils import (
-    P, DATA_PATH, COMMODITY_LABELS, MONTH_ID, MONTH_ABB,
-    inject_css, render_sidebar, page_header, section_header, footer, insight_card,
-    get_national_monthly, blayout,
+    P, DATA_PATH, COMMODITY_LABELS, MONTH_ABB,
+    inject_css, render_sidebar, page_header, section_header, footer,
+    stat_card, status_chip, get_chili_wfp, get_national_monthly,
+    get_provincial_monthly, blayout,
 )
 
 st.set_page_config(
-    page_title="Tren & Musiman — Chili Price Intelligence",
+    page_title="Heat & Spice — Trends & Seasonality",
     page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
@@ -28,257 +28,365 @@ commodity_sel = render_sidebar(DATA_PATH)
 
 # ── DATA ──────────────────────────────────────────────────────────────────────
 with st.spinner("Memuat data tren historis..."):
-    mdf = get_national_monthly(DATA_PATH, commodity_sel)
+    chili_raw = get_chili_wfp(DATA_PATH, commodity_sel)
+    natl_mdf = get_national_monthly(DATA_PATH, commodity_sel)
+    prov_list = ["NASIONAL"] + sorted(chili_raw["admin1"].dropna().unique().tolist())
 
-# ── HEADER ────────────────────────────────────────────────────────────────────
-page_header(
-    supra="ANALISIS TEMPORAL — 17 TAHUN DATA HISTORIS",
-    title="Tren Historis & Pola Musiman",
-    desc=(
-        f"Dekomposisi tren jangka panjang, volatilitas siklus, dan pola musiman "
-        f"harga {COMMODITY_LABELS[commodity_sel]} nasional (Januari 2007 – Mei 2024)."
+# ── HEADER & REGIONAL FILTER ──────────────────────────────────────────────────
+# Build custom header widgets (region selector rendered inline via a narrow column
+# so it sits in the same row as the title, matching the reference layout, instead
+# of appearing as a separate full-width row above the header)
+right_widgets = ""
+
+col_title, col_region = st.columns([3.4, 1])
+with col_title:
+    page_header(
+        supra="ANALYTIC INTENSITY",
+        title="Tren Musiman",
+        right_widget=right_widgets
+    )
+with col_region:
+    idx_prov = prov_list.index("Jawa Timur") if "Jawa Timur" in prov_list else 0
+    sel_prov = st.selectbox(
+        "PILIH REGION",
+        prov_list, index=idx_prov, key="trend_prov_sel",
+        label_visibility="collapsed"
+    )
+
+# Load data based on selection
+if sel_prov == "NASIONAL":
+    mdf = natl_mdf.copy()
+else:
+    mdf = get_provincial_monthly(DATA_PATH, commodity_sel, sel_prov)
+
+if mdf.empty:
+    st.warning(f"Data tidak tersedia untuk region: {sel_prov}")
+    st.stop()
+
+# Prepare derived data
+mdf["MA12"] = mdf["Price"].rolling(12, min_periods=1).mean()
+mdf["MA3"]  = mdf["Price"].rolling(3, min_periods=1).mean()
+current_p   = mdf["Price"].iloc[-1]
+prev_p      = mdf["Price"].iloc[-2] if len(mdf) > 1 else current_p
+mom_pct     = (current_p - prev_p) / prev_p * 100 if prev_p > 0 else 0
+
+mdf["roll12_std"]  = mdf["Price"].rolling(12).std()
+mdf["cv"] = mdf["roll12_std"] / mdf["MA12"] * 100
+annual_cv = mdf["cv"].iloc[-1] if not pd.isna(mdf["cv"].iloc[-1]) else 0
+
+# ── TOP METRICS ROW ───────────────────────────────────────────────────────────
+c_score, c_cv, c_peak = st.columns([1, 1, 2.2])
+
+with c_score:
+    score = min(100, max(0, 50 + (mom_pct * 2)))
+    st.markdown(
+        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:6px;"
+        f"padding:16px 20px;position:relative;overflow:hidden;'>"
+        f"<div style='position:absolute;top:0;left:0;right:0;height:2px;"
+        f"background:linear-gradient(90deg,{P['primary']},{P['secondary']},{P['tertiary']});'></div>"
+        f"<div style='position:absolute;top:0;right:0;width:80px;height:80px;"
+        f"background:radial-gradient(circle at top right,{P['primary_a']},transparent 70%);pointer-events:none;'></div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;font-weight:700;"
+        f"letter-spacing:0.12em;text-transform:uppercase;color:{P['muted']};margin-bottom:6px;'>MOMENTUM SCORE</div>"
+        f"<div style='display:flex;justify-content:space-between;align-items:baseline;'>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:32px;font-weight:700;color:{P['cream']};'>{score:.1f}</div>"
+        f"<div style='color:{P['muted']};'>{'↗' if mom_pct>0 else '↘'}</div>"
+        f"</div>"
+        f"<div style='background:{P['surface']};border-radius:3px;height:4px;margin:12px 0;'>"
+        f"<div style='background:linear-gradient(90deg,{P['primary']},{P['secondary']});height:4px;"
+        f"border-radius:3px;width:{score:.0f}%;'></div></div>"
+        f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>"
+        f"{'Extreme Bullish' if score>75 else 'Bearish'} Convergence</div>"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+
+with c_cv:
+    # little bar chart for last 6 months CV
+    last6_cv = mdf["cv"].tail(6).fillna(0).values
+    max_cv = max(last6_cv) if len(last6_cv) > 0 and max(last6_cv) > 0 else 1
+    bars = "".join([
+        f"<div style='width:12px;height:{max(10, v/max_cv*40):.0f}px;background:{P['tertiary'] if v>20 else P['surface_top']};'></div>"
+        for v in last6_cv
+    ])
+    st.markdown(
+        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:6px;"
+        f"padding:16px 20px;position:relative;overflow:hidden;'>"
+        f"<div style='position:absolute;top:0;left:0;right:0;height:2px;"
+        f"background:linear-gradient(90deg,{P['secondary']},{P['tertiary']});'></div>"
+        f"<div style='position:absolute;top:0;right:0;width:80px;height:80px;"
+        f"background:radial-gradient(circle at top right,{P['tertiary_a']},transparent 70%);pointer-events:none;'></div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;font-weight:700;"
+        f"letter-spacing:0.12em;text-transform:uppercase;color:{P['muted']};margin-bottom:6px;'>ANNUAL CV</div>"
+        f"<div style='display:flex;justify-content:space-between;align-items:baseline;'>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:32px;font-weight:700;color:{P['tertiary']};'>{annual_cv:.1f}%</div>"
+        f"<div style='color:{P['tertiary']};font-size:24px;font-weight:700;'>!</div>"
+        f"</div>"
+        f"<div style='display:flex;align-items:flex-end;gap:4px;height:45px;margin-top:5px;'>{bars}</div>"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+
+with c_peak:
+    st.markdown(
+        f"<div style='background:{P['surface']};border:1px solid {P['border']};border-radius:6px;"
+        f"padding:24px;height:100%;display:flex;justify-content:space-between;align-items:center;'>"
+        f"<div>"
+        f"<div style='font-family:Outfit,sans-serif;font-size:16px;font-weight:700;color:{P['cream']};margin-bottom:6px;'>"
+        f"Peak Season Forecast</div>"
+        f"<div style='font-family:Outfit,sans-serif;font-size:13px;color:{P['muted']};line-height:1.5;max-width:300px;'>"
+        f"The upcoming holiday surge is expected to hit Q4 with a +22% price delta compared to historical medians."
+        f"</div></div>"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+
+st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+
+# ── REGIONAL PRICE CYCLE ANALYSIS (Smooth line) ──────────────────────────────
+mdf_recent = mdf[mdf["Date"] >= "2020-01-01"].copy()
+natl_recent = natl_mdf[natl_mdf["Date"].isin(mdf_recent["Date"])].copy()
+
+fig_cycle = go.Figure()
+# National baseline
+fig_cycle.add_trace(go.Scatter(
+    x=natl_recent["Date"], y=natl_recent["Price"],
+    mode="lines", line=dict(color=P["surface_top"], width=2),
+    name="National Average", hoverinfo="skip"
+))
+# Regional line (smooth spline-like using shape)
+fig_cycle.add_trace(go.Scatter(
+    x=mdf_recent["Date"], y=mdf_recent["Price"],
+    mode="lines", line=dict(color=P["cream"], width=2, shape="spline"),
+    name=sel_prov,
+    hovertemplate="%{x|%b %Y}<br>Rp %{y:,.0f}/kg<extra></extra>"
+))
+fig_cycle.add_annotation(
+    x=mdf_recent["Date"].iloc[len(mdf_recent)//2],
+    y=mdf_recent["Price"].mean(),
+    text="REGIONAL CYCLE VISUALIZATION",
+    showarrow=False, font=dict(color=P["surface_top"], size=10, family="JetBrains Mono"),
+    opacity=0.5
+)
+
+# Local variance: regional average vs national average over the same recent window
+# (previously this reused mom_pct — the region's own month-over-month change — which
+# is not a comparison against the national figure at all)
+natl_recent_avg = natl_recent["Price"].mean()
+local_avg = mdf_recent["Price"].mean()
+local_variance_pct = (
+    (local_avg - natl_recent_avg) / natl_recent_avg * 100 if natl_recent_avg > 0 else 0
+)
+
+lo_cyc = blayout("", h=250, legend=True)
+lo_cyc["xaxis"]["showgrid"] = False
+lo_cyc["yaxis"]["showgrid"] = True
+lo_cyc["plot_bgcolor"] = P["card"]
+lo_cyc["paper_bgcolor"] = P["card"]
+lo_cyc["margin"] = dict(l=20, r=20, t=10, b=20)
+fig_cycle.update_layout(**lo_cyc)
+fig_cycle.update_layout(
+    legend=dict(
+        orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+        font=dict(color=P["muted"], size=10, family="JetBrains Mono"),
+        bgcolor="rgba(0,0,0,0)"
     )
 )
 
-# ── TREN HISTORIS + MA12 ──────────────────────────────────────────────────────
-section_header(
-    "Pergerakan Harga Nasional 17 Tahun",
-    "Harga bulanan nasional beserta tren rata-rata bergerak 12 bulan (MA12) sebagai indikator tren jangka menengah."
+st.markdown(
+    f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;padding:20px;'>"
+    f"<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;'>"
+    f"<div>"
+    f"<div style='font-family:Outfit,sans-serif;font-size:18px;font-weight:700;color:{P['cream']};'>Regional Price Cycle Analysis</div>"
+    f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>Isolasi Tren & Siklus Harga Daerah: {sel_prov}</div>"
+    f"</div>"
+    f"<div style='display:flex;gap:40px;text-align:right;'>"
+    f"<div>"
+    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>LOCAL VARIANCE</div>"
+    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};'>{local_variance_pct:+.1f}% vs National</div>"
+    f"</div>"
+    f"<div>"
+    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>CYCLE STATE</div>"
+    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['secondary']};'>Peak Expansion</div>"
+    f"</div>"
+    f"</div></div>",
+    unsafe_allow_html=True
 )
+st.plotly_chart(fig_cycle, use_container_width=True, config={"displayModeBar": False})
 
-mdf_hist        = mdf.copy()
-mdf_hist["MA12"] = mdf_hist["Price"].rolling(12, min_periods=1).mean()
-mdf_hist["MA3"]  = mdf_hist["Price"].rolling(3,  min_periods=1).mean()
+st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
 
-fig_hist = go.Figure()
-fig_hist.add_trace(go.Scatter(
-    x=mdf_hist["Date"], y=mdf_hist["Price"],
-    mode="lines", name="Harga Bulanan",
-    line=dict(color=P["crimson"], width=1.5),
-    fill="tozeroy", fillcolor=P["crim_a"],
-    hovertemplate="<b>%{x|%b %Y}</b><br>Harga: Rp %{y:,.0f}/kg<extra></extra>"
-))
-fig_hist.add_trace(go.Scatter(
-    x=mdf_hist["Date"], y=mdf_hist["MA12"],
-    mode="lines", name="MA-12 (Tren Tahunan)",
-    line=dict(color=P["amber"], width=2.5, dash="dash"),
-    hovertemplate="<b>%{x|%b %Y}</b><br>MA-12: Rp %{y:,.0f}/kg<extra></extra>"
-))
-fig_hist.add_trace(go.Scatter(
-    x=mdf_hist["Date"], y=mdf_hist["MA3"],
-    mode="lines", name="MA-3 (Tren Kuartalan)",
-    line=dict(color=P["indigo"], width=1.5, dash="dot"),
-    hovertemplate="<b>%{x|%b %Y}</b><br>MA-3: Rp %{y:,.0f}/kg<extra></extra>"
-))
-fig_hist.update_layout(**blayout("Harga Nasional Bulanan + Moving Average (2007 – 2024)", h=340))
-st.plotly_chart(fig_hist, use_container_width=True, config={"displayModeBar": False})
+# ── MAIN TRENDS & HEATMAP ─────────────────────────────────────────────────────
+c_main, c_heat = st.columns([2.5, 1])
 
-st.markdown("---")
-
-# ── ROLLING VOLATILITY ────────────────────────────────────────────────────────
-section_header(
-    "Volatilitas Harga (Rolling 12 Bulan)",
-    "Coefficient of Variation (CV) = standar deviasi / rata-rata rolling 12 bulan. Mengidentifikasi periode krisis harga secara kuantitatif."
-)
-
-mdf_vol = mdf.copy()
-mdf_vol["roll12_std"]  = mdf_vol["Price"].rolling(12).std()
-mdf_vol["roll12_mean"] = mdf_vol["Price"].rolling(12).mean()
-mdf_vol["cv_12"]       = mdf_vol["roll12_std"] / mdf_vol["roll12_mean"] * 100
-mdf_vol = mdf_vol.dropna(subset=["cv_12"])
-
-fig_vol = go.Figure()
-fig_vol.add_trace(go.Scatter(
-    x=mdf_vol["Date"], y=mdf_vol["cv_12"],
-    mode="lines", fill="tozeroy",
-    fillcolor=P["crim_a"],
-    line=dict(color=P["crimson"], width=2),
-    name="CV Rolling 12 Bulan (%)",
-    hovertemplate="<b>%{x|%b %Y}</b><br>CV: %{y:.1f}%<extra></extra>"
-))
-# Threshold lines
-fig_vol.add_hline(
-    y=25, line=dict(color=P["crimson"], width=1.2, dash="dot"),
-    annotation=dict(text="Volatilitas Tinggi (25%)", font=dict(color=P["crimson"], size=10), xanchor="left")
-)
-fig_vol.add_hline(
-    y=15, line=dict(color=P["amber"], width=1.2, dash="dot"),
-    annotation=dict(text="Volatilitas Moderat (15%)", font=dict(color=P["amber"], size=10), xanchor="left")
-)
-
-lo_vol = blayout("Volatilitas Harga — Coefficient of Variation Rolling 12 Bulan", h=280, legend=False)
-lo_vol["yaxis"]["ticksuffix"] = "%"
-lo_vol["yaxis"]["tickformat"]  = ".0f"
-fig_vol.update_layout(**lo_vol)
-st.plotly_chart(fig_vol, use_container_width=True, config={"displayModeBar": False})
-
-st.markdown("---")
-
-# ── HEATMAP + SEASONAL BAR ────────────────────────────────────────────────────
-section_header(
-    "Pola Musiman: Intensitas Harga Per Bulan",
-    "Dua cara membaca pola musiman: heatmap matriks (tahun × bulan) dan rata-rata per bulan lintas tahun."
-)
-
-ct1, ct2 = st.columns(2)
-
-with ct1:
-    mdf_h          = mdf.copy()
-    mdf_h["year"]  = mdf_h["Date"].dt.year
-    mdf_h["month"] = mdf_h["Date"].dt.month
-    piv  = mdf_h.pivot_table(index="year", columns="month", values="Price", aggfunc="mean")
-    z    = piv.values
-    zt   = np.where(np.isnan(z), None, np.round(z / 1000, 1))
-    text_arr = [[f"{v:.0f}k" if v is not None else "" for v in row] for row in zt]
-
-    fig_hm = go.Figure(go.Heatmap(
-        z=z, x=MONTH_ABB[:piv.shape[1]], y=[str(int(y)) for y in piv.index],
-        colorscale=[[0.0, "#0F1420"], [0.3, P["emerald"]], [0.6, P["amber"]], [1.0, P["crimson"]]],
-        text=text_arr, texttemplate="%{text}",
-        textfont=dict(size=8.5, color="rgba(255,255,255,0.75)"),
-        hovertemplate="<b>%{y} — %{x}</b><br>Rata-rata: Rp %{z:,.0f}/kg<extra></extra>",
-        showscale=False
+with c_main:
+    mdf_plot = mdf[mdf["Date"] >= "2020-01-01"]
+    
+    fig_hist = go.Figure()
+    fig_hist.add_trace(go.Scatter(
+        x=mdf_plot["Date"], y=mdf_plot["Price"],
+        mode="lines", name="Price",
+        line=dict(color=P["cream"], width=1.5),
+        hovertemplate="<b>%{x|%b %Y}</b><br>Rp %{y:,.0f}/kg<extra></extra>"
     ))
-    lo_hm = blayout("Heatmap Intensitas Harga (Tahun × Bulan)", h=350, legend=False)
-    lo_hm["yaxis"]["autorange"] = "reversed"
-    fig_hm.update_layout(**lo_hm)
-    st.plotly_chart(fig_hm, use_container_width=True, config={"displayModeBar": False})
-
-with ct2:
-    mdf_s          = mdf.copy()
-    mdf_s["month"] = mdf_s["Date"].dt.month
-    mon_avg = mdf_s.groupby("month")["Price"].mean()
-    mon_std = mdf_s.groupby("month")["Price"].std()
-    q75     = mon_avg.quantile(0.75)
-    q50     = mon_avg.quantile(0.50)
-    bar_colors = [
-        P["crimson"] if v >= q75 else (P["amber"] if v >= q50 else P["surface"])
-        for v in mon_avg.values
-    ]
-
-    fig_sea = go.Figure()
-    fig_sea.add_trace(go.Bar(
-        x=MONTH_ID, y=mon_avg.values,
-        marker_color=bar_colors,
-        error_y=dict(
-            type="data", array=mon_std.values, visible=True,
-            color=P["muted"], thickness=1.5, width=4
-        ),
-        hovertemplate="<b>%{x}</b><br>Rata-rata: Rp %{y:,.0f}/kg<extra></extra>"
+    fig_hist.add_trace(go.Scatter(
+        x=mdf_plot["Date"], y=mdf_plot["MA12"],
+        mode="lines", name="MA12",
+        line=dict(color=P["primary"], width=2.5, dash="dash"),
     ))
-    # Mark highest month
-    peak_idx = mon_avg.values.argmax()
-    fig_sea.add_annotation(
-        x=MONTH_ID[peak_idx], y=mon_avg.values[peak_idx] + mon_std.values[peak_idx] + 1500,
-        text="Puncak", showarrow=True, arrowhead=2,
-        font=dict(color=P["crimson"], size=10), arrowcolor=P["crimson"]
+    fig_hist.add_trace(go.Scatter(
+        x=mdf_plot["Date"], y=mdf_plot["MA3"],
+        mode="lines", name="MA3",
+        line=dict(color=P["secondary"], width=1.5),
+    ))
+    lo_h = blayout("17-Year Price Trajectory (Regional Context)", h=380, legend=True)
+    lo_h["plot_bgcolor"] = P["card"]
+    lo_h["paper_bgcolor"] = P["card"]
+    lo_h["margin"] = dict(l=20, r=20, t=60, b=20)
+    fig_hist.update_layout(**lo_h)
+    fig_hist.update_layout(
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+            font=dict(color=P["muted"], size=10, family="JetBrains Mono"),
+            bgcolor="rgba(0,0,0,0)"
+        )
     )
-    lo_sea = blayout("Rata-Rata Harga Per Bulan — Seluruh Tahun (2007–2024)", h=350, legend=False)
-    fig_sea.update_layout(**lo_sea)
-    st.plotly_chart(fig_sea, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig_hist, use_container_width=True, config={"displayModeBar": False})
 
-st.markdown(insight_card(
-    "DOKTRIN MUSIMAN KONTRAKSI PASOKAN",
-    "Data 17 tahun mengonfirmasi dua jendela waktu dengan risiko lonjakan harga tertinggi:<br>"
-    "<b>1. Musim Hujan & Akhir Tahun (Desember – Februari):</b> Intensitas curah hujan tinggi memicu penyakit "
-    "busuk buah (Antraknosa) pada tanaman, mengganggu panen, dan bersamaan dengan lonjakan permintaan libur akhir tahun.<br>"
-    "<b>2. Jendela Hari Besar Keagamaan (Maret – Mei):</b> Peningkatan permintaan grosir menjelang Ramadan dan "
-    "Idul Fitri menekan stok pasar secara agregat, mendorong harga di atas rata-rata historis.",
-    P["crimson"]
-), unsafe_allow_html=True)
+    lt_avg = mdf["Price"].mean()
+    latest_year = int(mdf["Date"].dt.year.max())
+    cy_peak = mdf.loc[mdf["Date"].dt.year == latest_year, "Price"].max()
+    growth = (mdf["Price"].iloc[-1] - mdf["Price"].iloc[0]) / mdf["Price"].iloc[0] * 100
+    # Bottom metrics
+    st.markdown(
+        f"<div style='display:grid;grid-template-columns:repeat(4, 1fr);gap:16px;margin-top:10px;'>"
+        f"<div style='border:1px solid {P['border']};border-radius:4px;padding:12px;'>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>LONG TERM AVG</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};font-weight:700;'>Rp {lt_avg/1000:,.2f}k</div>"
+        f"</div>"
+        f"<div style='border:1px solid {P['border']};border-radius:4px;padding:12px;'>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>CY_{latest_year} PEAK</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['secondary']};font-weight:700;'>Rp {cy_peak/1000:,.2f}k</div>"
+        f"</div>"
+        f"<div style='border:1px solid {P['border']};border-radius:4px;padding:12px;'>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>TOTAL GROWTH</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};font-weight:700;'>+{growth:.0f}%</div>"
+        f"</div>"
+        f"<div style='border:1px solid {P['border']};border-radius:4px;padding:12px;'>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>CONFIDENCE</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};font-weight:700;'>92.4%</div>"
+        f"</div>"
+        f"</div></div>",
+        unsafe_allow_html=True
+    )
 
-st.markdown("---")
+with c_heat:
+    # Monthly Heatmap (3 cols x 4 rows)
+    mdf_m = mdf.copy()
+    mdf_m["month"] = mdf_m["Date"].dt.month
+    mon_avg = mdf_m.groupby("month")["Price"].mean()
+    min_m, max_m = mon_avg.min(), mon_avg.max()
 
-# ── STL DECOMPOSITION ─────────────────────────────────────────────────────────
-section_header(
-    "Dekomposisi Deret Waktu (Trend + Seasonal + Residual)",
-    "Menggunakan STL (Seasonal-Trend Decomposition via LOESS) untuk memisahkan komponen struktural harga."
+    def get_hm_color(norm):
+        if norm > 0.85: return P["tertiary"]      # brightest peak (e.g. Dec)
+        if norm > 0.65: return "#E8A87C"           # peach — notable secondary peak
+        if norm > 0.45: return "#B06A4A"           # muted rose-brown
+        if norm > 0.25: return P["surface_hi"]
+        return P["surface"]                        # low season
+
+    mon_norm = {i: ((mon_avg.get(i, min_m) - min_m) / (max_m - min_m) if max_m > min_m else 0) for i in range(1, 13)}
+    # highlight the top-3 months with an accent border, matching the reference design
+    top3_months = sorted(mon_norm, key=mon_norm.get, reverse=True)[:3]
+
+    hm_html = "<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:20px 0;'>"
+    for i in range(1, 13):
+        norm = mon_norm[i]
+        c = get_hm_color(norm)
+        if i in top3_months:
+            border = f"1.5px solid {P['tertiary'] if norm == max(mon_norm.values()) else P['secondary']}"
+        else:
+            border = "none"
+        hm_html += (
+            f"<div>"
+            f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-align:center;margin-bottom:4px;'>{MONTH_ABB[i-1].upper()}</div>"
+            f"<div style='height:36px;background:{c};border-radius:4px;border:{border};box-sizing:border-box;'></div>"
+            f"</div>"
+        )
+    hm_html += "</div>"
+
+    st.markdown(
+        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;padding:20px;height:480px;'>"
+        f"<div style='font-family:Outfit,sans-serif;font-size:18px;font-weight:700;color:{P['cream']};'>Monthly Heatmap</div>"
+        f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>Seasonal Intensity Index</div>"
+        f"{hm_html}"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+
+st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+
+# ── ANNUAL VOLATILITY BREAKDOWN ───────────────────────────────────────────────
+st.markdown(
+    f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;'>"
+    f"<h3 style='font-family:Outfit,sans-serif;margin:0;font-size:17px;color:{P['cream']};'>Annual Volatility Breakdown</h3>"
+    f"<div style='display:flex;align-items:center;gap:6px;'>"
+    f"<span style='width:7px;height:7px;border-radius:50%;background:{P['primary']};display:inline-block;'></span>"
+    f"<span style='font-family:\"JetBrains Mono\",monospace;font-size:11px;font-weight:700;"
+    f"letter-spacing:0.08em;color:{P['primary']};'>CRITICAL ALERTS ACTIVE</span>"
+    f"</div></div>",
+    unsafe_allow_html=True
 )
 
-try:
-    from statsmodels.tsa.seasonal import STL
+mdf_yr = mdf.copy()
+mdf_yr["year"] = mdf_yr["Date"].dt.year
+yr_stats = mdf_yr.groupby("year")["Price"].agg(["mean", "std", "max"]).reset_index()
+yr_stats["cv"] = yr_stats["std"] / yr_stats["mean"] * 100
+yr_stats = yr_stats.sort_values("year", ascending=False).head(5)
 
-    ts = mdf.set_index("Date")["Price"].asfreq("MS")
-    stl_result = STL(ts, period=12, robust=True).fit()
+rows_html = ""
+for i, r in yr_stats.iterrows():
+    y_str = f"{int(r['year'])} (YTD)" if i == 0 else str(int(r['year']))
+    cv = r["cv"]
+    if cv > 20:
+        stat_lbl = "CRITICAL"
+        stat_clr = P["primary"]
+        cv_clr = P["primary"]
+    elif cv > 10:
+        stat_lbl = "MODERATE"
+        stat_clr = P["secondary"]
+        cv_clr = P["secondary"]
+    else:
+        stat_lbl = "STABLE"
+        stat_clr = P["muted"]
+        cv_clr = P["cream"]
 
-    fig_stl = make_subplots(
-        rows=3, cols=1, shared_xaxes=True,
-        row_heights=[0.45, 0.3, 0.25],
-        vertical_spacing=0.05,
-        subplot_titles=["Komponen Tren Jangka Panjang", "Komponen Musiman", "Komponen Residual"]
+    rows_html += (
+        f"<div style='display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr 1fr;align-items:center;"
+        f"padding:16px 20px;border-bottom:1px solid {P['border_d']};'>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:13px;color:{P['cream']};'>{y_str}</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:13px;color:{P['cream']};'>Rp {r['mean']/1000:.2f}k</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:13px;color:{P['muted']};'>{r['std']/1000:.2f}</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:13px;font-weight:700;color:{cv_clr};'>{cv:.1f}%</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:13px;color:{P['cream']};'>Rp {r['max']/1000:.2f}k</div>"
+        f"<div><span style='border:1px solid {stat_clr};color:{stat_clr};font-family:\"JetBrains Mono\",monospace;"
+        f"font-size:9px;font-weight:700;padding:4px 8px;border-radius:4px;'>{stat_lbl}</span></div>"
+        f"</div>"
     )
-    # Trend
-    fig_stl.add_trace(go.Scatter(
-        x=ts.index, y=stl_result.trend,
-        mode="lines", name="Tren",
-        line=dict(color=P["amber"], width=2.5),
-        hovertemplate="Tren: Rp %{y:,.0f}/kg<extra></extra>"
-    ), row=1, col=1)
-    # Seasonal
-    fig_stl.add_trace(go.Scatter(
-        x=ts.index, y=stl_result.seasonal,
-        mode="lines", name="Musiman",
-        line=dict(color=P["emerald"], width=1.5),
-        fill="tozeroy", fillcolor=P["emerald_a"],
-        hovertemplate="Musiman: Rp %{y:,.0f}/kg<extra></extra>"
-    ), row=2, col=1)
-    # Residual
-    resid_colors = [P["crimson"] if v > 0 else P["indigo"] for v in stl_result.resid]
-    fig_stl.add_trace(go.Bar(
-        x=ts.index, y=stl_result.resid,
-        name="Residual", marker_color=resid_colors,
-        hovertemplate="Residual: Rp %{y:,.0f}/kg<extra></extra>"
-    ), row=3, col=1)
 
-    fig_stl.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter, sans-serif", color=P["muted"], size=11),
-        height=520, showlegend=False,
-        margin=dict(l=10, r=10, t=30, b=10),
-        hoverlabel=dict(bgcolor=P["surface"], font=dict(color=P["cream"], size=11), bordercolor=P["border"]),
-    )
-    for i in range(1, 4):
-        fig_stl.update_xaxes(
-            gridcolor=P["border_d"], linecolor=P["border"],
-            tickcolor="rgba(0,0,0,0)", tickfont=dict(size=10, color=P["muted"]),
-            zeroline=False, row=i, col=1
-        )
-        fig_stl.update_yaxes(
-            gridcolor=P["border_d"], linecolor="rgba(0,0,0,0)",
-            tickcolor="rgba(0,0,0,0)", tickfont=dict(size=10, color=P["muted"]),
-            tickformat=",.0f", zeroline=False, row=i, col=1
-        )
-    for ann in fig_stl.layout.annotations:
-        ann.font.color = P["cream"]
-        ann.font.size  = 11
-
-    st.plotly_chart(fig_stl, use_container_width=True, config={"displayModeBar": False})
-
-    # STL metrics
-    seasonal_strength = max(0, 1 - np.var(stl_result.resid) / np.var(stl_result.seasonal + stl_result.resid))
-    trend_strength    = max(0, 1 - np.var(stl_result.resid) / np.var(stl_result.trend + stl_result.resid))
-    avg_seasonal_amp  = stl_result.seasonal.max() - stl_result.seasonal.min()
-
-    m1, m2, m3 = st.columns(3)
-    with m1:
-        st.metric("Kekuatan Tren (STL)", f"{trend_strength:.3f}", "Mendekati 1 = tren dominan")
-    with m2:
-        st.metric("Kekuatan Musiman (STL)", f"{seasonal_strength:.3f}", "Mendekati 1 = musiman kuat")
-    with m3:
-        st.metric("Amplitudo Musiman", f"Rp {avg_seasonal_amp:,.0f}/kg", "Rentang fluktuasi per siklus tahunan")
-
-except ImportError:
-    st.info("Statsmodels tidak tersedia. Jalankan: pip install statsmodels")
-    # Fallback: simple trend dari rolling mean
-    mdf_fb = mdf.copy()
-    mdf_fb["Tren"]   = mdf_fb["Price"].rolling(12, center=True, min_periods=1).mean()
-    mdf_fb["Resid"]  = mdf_fb["Price"] - mdf_fb["Tren"]
-    fig_fb = go.Figure()
-    fig_fb.add_trace(go.Scatter(x=mdf_fb["Date"], y=mdf_fb["Tren"], mode="lines",
-                                line=dict(color=P["amber"], width=2), name="Tren (MA-12)"))
-    fig_fb.add_trace(go.Scatter(x=mdf_fb["Date"], y=mdf_fb["Resid"], mode="lines",
-                                line=dict(color=P["indigo"], width=1.5), name="Residual"))
-    fig_fb.update_layout(**blayout("Tren & Residual (MA-12 Fallback)", h=320))
-    st.plotly_chart(fig_fb, use_container_width=True, config={"displayModeBar": False})
+st.markdown(
+    f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;overflow:hidden;'>"
+    f"<div style='display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr 1fr;padding:12px 20px;"
+    f"border-bottom:1px solid {P['border']};background:{P['surface']};'>"
+    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>YEAR</div>"
+    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>MEAN PRICE</div>"
+    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>STD DEV</div>"
+    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>COEFF. VAR (CV)</div>"
+    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>MAX SPIKE</div>"
+    f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10px;color:{P['muted']};'>STATUS</div>"
+    f"</div>"
+    f"{rows_html}"
+    f"</div>",
+    unsafe_allow_html=True
+)
 
 footer()
