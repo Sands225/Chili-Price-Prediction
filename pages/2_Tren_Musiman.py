@@ -148,6 +148,34 @@ c_main = st.container()
 
 with c_main:
     mdf_plot = mdf[mdf["Date"] >= "2020-01-01"]
+    lt_avg = mdf["Price"].mean()
+    latest_year = int(mdf["Date"].dt.year.max())
+    cy_peak = mdf.loc[mdf["Date"].dt.year == latest_year, "Price"].max()
+    growth = (mdf["Price"].iloc[-1] - mdf["Price"].iloc[0]) / mdf["Price"].iloc[0] * 100
+
+    st.markdown(
+        f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;padding:20px;'>"
+        f"<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;'>"
+        f"<div>"
+        f"<div style='font-family:Outfit,sans-serif;font-size:18px;font-weight:700;color:{P['cream']};'>Price Trajectory (2020 – 2024)</div>"
+        f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>Pergerakan Harga Historis & Rata-rata Bergerak (MA3 & MA12)</div>"
+        f"</div>"
+        f"<div style='display:flex;gap:32px;text-align:right;'>"
+        f"<div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>LONG TERM AVG</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};font-weight:700;'>Rp {lt_avg:,.0f}</div>"
+        f"</div>"
+        f"<div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>CY_{latest_year} PEAK</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['secondary']};font-weight:700;'>Rp {cy_peak:,.0f}</div>"
+        f"</div>"
+        f"<div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>TOTAL GROWTH</div>"
+        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};font-weight:700;'>{growth:+.1f}%</div>"
+        f"</div>"
+        f"</div></div>",
+        unsafe_allow_html=True
+    )
     
     fig_hist = go.Figure()
     fig_hist.add_trace(go.Scatter(
@@ -166,10 +194,10 @@ with c_main:
         mode="lines", name="MA3",
         line=dict(color=P["secondary"], width=1.5),
     ))
-    lo_h = blayout("Price Trajectory (2020 - 2024)", h=380, legend=True)
+    lo_h = blayout("", h=320, legend=True)
     lo_h["plot_bgcolor"] = P["card"]
     lo_h["paper_bgcolor"] = P["card"]
-    lo_h["margin"] = dict(l=20, r=20, t=60, b=20)
+    lo_h["margin"] = dict(l=20, r=20, t=10, b=20)
     fig_hist.update_layout(**lo_h)
     fig_hist.update_layout(
         legend=dict(
@@ -179,29 +207,6 @@ with c_main:
         )
     )
     st.plotly_chart(fig_hist, use_container_width=True, config={"displayModeBar": False})
-
-    lt_avg = mdf["Price"].mean()
-    latest_year = int(mdf["Date"].dt.year.max())
-    cy_peak = mdf.loc[mdf["Date"].dt.year == latest_year, "Price"].max()
-    growth = (mdf["Price"].iloc[-1] - mdf["Price"].iloc[0]) / mdf["Price"].iloc[0] * 100
-    # Bottom metrics
-    st.markdown(
-        f"<div style='display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;margin-top:10px;'>"
-        f"<div style='border:1px solid {P['border']};border-radius:4px;padding:12px;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>LONG TERM AVG</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};font-weight:700;'>Rp {lt_avg/1000:,.2f}k</div>"
-        f"</div>"
-        f"<div style='border:1px solid {P['border']};border-radius:4px;padding:12px;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>CY_{latest_year} PEAK</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['secondary']};font-weight:700;'>Rp {cy_peak/1000:,.2f}k</div>"
-        f"</div>"
-        f"<div style='border:1px solid {P['border']};border-radius:4px;padding:12px;'>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;color:{P['muted']};text-transform:uppercase;'>TOTAL GROWTH</div>"
-        f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:14px;color:{P['cream']};font-weight:700;'>+{growth:.0f}%</div>"
-        f"</div>"
-        f"</div></div>",
-        unsafe_allow_html=True
-    )
 
 
 st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
