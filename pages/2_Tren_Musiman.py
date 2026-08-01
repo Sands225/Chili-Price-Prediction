@@ -148,6 +148,8 @@ c_main = st.container()
 
 with c_main:
     mdf_plot = mdf[mdf["Date"] >= "2020-01-01"]
+    min_yr = int(mdf_plot["Date"].dt.year.min())
+    max_yr = int(mdf_plot["Date"].dt.year.max())
     lt_avg = mdf["Price"].mean()
     latest_year = int(mdf["Date"].dt.year.max())
     cy_peak = mdf.loc[mdf["Date"].dt.year == latest_year, "Price"].max()
@@ -157,7 +159,7 @@ with c_main:
         f"<div style='background:{P['card']};border:1px solid {P['border']};border-radius:8px;padding:20px;'>"
         f"<div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;'>"
         f"<div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:18px;font-weight:700;color:{P['cream']};'>Price Trajectory (2020 – 2024)</div>"
+        f"<div style='font-family:Outfit,sans-serif;font-size:18px;font-weight:700;color:{P['cream']};'>Price Trajectory ({min_yr} – {max_yr})</div>"
         f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>Pergerakan Harga Historis & Rata-rata Bergerak (MA3 & MA12)</div>"
         f"</div>"
         f"<div style='display:flex;gap:32px;text-align:right;'>"

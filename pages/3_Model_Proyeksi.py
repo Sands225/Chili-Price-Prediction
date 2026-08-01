@@ -84,11 +84,13 @@ st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
 c_chart, c_feat = st.columns([2.5, 1])
 
 with c_chart:
+    start_m = pd.Timestamp(fcast_df["Date"].iloc[0]).strftime("%b %Y")
+    end_m   = pd.Timestamp(fcast_df["Date"].iloc[-1]).strftime("%b %Y")
     st.markdown(
         f"<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;'>"
         f"<div>"
         f"<div style='font-family:Outfit,sans-serif;font-size:16px;font-weight:700;color:{P['cream']};'>12-Month Seasonal Forecast</div>"
-        f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>Proyeksi musiman dinamis 12-bulan ke depan (Juni 2024 – Mei 2025)</div>"
+        f"<div style='font-family:Outfit,sans-serif;font-size:12px;color:{P['muted']};'>Proyeksi musiman dinamis 12-bulan ke depan ({start_m} – {end_m})</div>"
         f"</div>"
         f"</div>",
         unsafe_allow_html=True
