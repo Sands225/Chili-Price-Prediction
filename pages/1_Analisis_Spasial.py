@@ -214,7 +214,7 @@ with view_tab1:
         top_chp = mkt_stats.sort_values("mean", ascending=True).head(5)
         rows_chp = ""
         for i, (_, r) in enumerate(top_chp.iterrows()):
-            clr = P["emerald"] if i == 0 else (P["secondary"] if i == 1 else P["muted"])
+            clr = P["emerald"] if i < 2 else P["muted"]
             rows_chp += (
                 f"<div style='display:flex;justify-content:space-between;align-items:center;"
                 f"padding:8px 0;border-bottom:1px solid {P['border_d']};'>"
@@ -227,7 +227,7 @@ with view_tab1:
                 f"</div>"
             )
         st.markdown(
-            f"<div style='background:{P['card']};border:1px solid {P['border']};border-top:3px solid {P['secondary']};"
+            f"<div style='background:{P['card']};border:1px solid {P['border']};border-top:3px solid {P['emerald']};"
             f"border-radius:6px;padding:14px 16px;'>"
             f"<div style='display:flex;align-items:center;gap:6px;margin-bottom:10px;'>"
             f"<span style='color:{P['emerald']};'>↓</span>"
