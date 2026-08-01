@@ -85,13 +85,14 @@ with view_tab1:
                     ],
                     showscale=True,
                     colorbar=dict(
+                        title=dict(text="Harga (Rp/kg)", font=dict(color=P["cream"], size=10, family="JetBrains Mono"), side="top"),
                         tickfont=dict(color=P["muted"], size=9, family="JetBrains Mono"),
-                        title=dict(text="Rp/kg", font=dict(color=P["muted"], size=10)),
-                        thickness=10, tickformat=",.0f", outlinecolor="rgba(0,0,0,0)"
+                        thickness=10, tickformat=",.0f", outlinecolor="rgba(0,0,0,0)",
+                        y=0.45, len=0.85
                     ),
                     opacity=0.88
                 ),
-                text=hover_txt, hoverinfo="text"
+                text=hover_txt, hoverinfo="text", showlegend=False
             ))
             if hotspot is not None:
                 fig_map.add_trace(go.Scattermapbox(
@@ -127,7 +128,7 @@ with view_tab1:
                 f"</div></div></div>",
                 unsafe_allow_html=True
             )
-            st.plotly_chart(fig_map, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig_map, use_container_width=True, config={"scrollZoom": True, "displayModeBar": False})
 
         # Caption + Download button
         st.markdown(
@@ -290,17 +291,21 @@ with view_tab2:
                     size=12, color=pg["avg_price"],
                     colorscale=[[0.0, P["emerald"]], [0.5, P["secondary"]], [1.0, P["primary"]]],
                     showscale=True,
-                    colorbar=dict(tickfont=dict(color=P["muted"], size=9), thickness=10, tickformat=",.0f", outlinecolor="rgba(0,0,0,0)")
+                    colorbar=dict(
+                        title=dict(text="Harga (Rp/kg)", font=dict(color=P["cream"], size=10, family="JetBrains Mono"), side="top"),
+                        tickfont=dict(color=P["muted"], size=9), thickness=10, tickformat=",.0f", outlinecolor="rgba(0,0,0,0)",
+                        y=0.45, len=0.85
+                    )
                 ),
                 text=[f"<b>{r['market']}</b><br>Rp {r['avg_price']:,.0f}/kg" for _, r in pg.iterrows()],
-                hoverinfo="text"
+                hoverinfo="text", showlegend=False
             ))
             fig_pm.update_layout(
                 mapbox=dict(style="carto-darkmatter", center=dict(lat=center_lat, lon=center_lon), zoom=6),
                 paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0,r=0,t=0,b=0), height=360,
                 hoverlabel=dict(bgcolor=P["surface"], font=dict(color=P["cream"], size=11), bordercolor=P["border"])
             )
-            st.plotly_chart(fig_pm, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig_pm, use_container_width=True, config={"scrollZoom": True, "displayModeBar": False})
         else:
             st.info(f"Data koordinat tidak tersedia untuk {sel_prov}.")
 
