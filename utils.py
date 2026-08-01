@@ -472,12 +472,18 @@ def forecast_months_ahead(res: dict, n: int = 7) -> pd.DataFrame:
     """
     mdf = res["mdf"].copy()
     ts  = mdf.set_index("Date")["Price"]
+    ts.index = pd.date_range(ts.index[0], periods=len(ts), freq="MS")
     
     try:
         from statsmodels.tsa.holtwinters import ExponentialSmoothing
-        hw_model = ExponentialSmoothing(ts, seasonal_periods=12, trend="add", seasonal="add", initialization_method="estimated")
-        hw_fit   = hw_model.fit()
-        fc_vals  = hw_fit.forecast(n)
+        try:
+            hw_model = ExponentialSmoothing(ts, seasonal_periods=12, trend="add", seasonal="add", initialization_method="heuristic")
+            hw_fit   = hw_model.fit(optimized=True)
+            fc_vals  = hw_fit.forecast(n)
+        except Exception:
+            hw_model = ExponentialSmoothing(ts, seasonal_periods=12, trend="add", seasonal="add", initialization_method="estimated")
+            hw_fit   = hw_model.fit()
+            fc_vals  = hw_fit.forecast(n)
     except Exception:
         # Fallback: Seasonal additive projection based on historical monthly averages
         mdf_calc = mdf.copy()
