@@ -243,7 +243,17 @@ div[data-baseweb="input"] > div:focus-within {{
 
 /* ── SIDEBAR NAV ── */
 [data-testid="stSidebarNav"] {{
-    padding-top: 10px !important;
+    padding-top: 95px !important;
+    padding-bottom: 0px !important;
+    margin-bottom: -15px !important;
+}}
+.custom-sidebar-brand {{
+    position: fixed !important;
+    top: 28px !important;
+    left: 28px !important;
+    width: 250px !important;
+    z-index: 999999 !important;
+    pointer-events: none;
 }}
 [data-testid="stSidebarNavItems"] a {{
     color: {P['muted']} !important;
@@ -251,8 +261,8 @@ div[data-baseweb="input"] > div:focus-within {{
     font-family: 'Outfit', sans-serif !important;
     font-size: 14px !important;
     font-weight: 500 !important;
-    padding: 10px 16px !important;
-    margin: 4px 16px !important;
+    padding: 8px 16px !important;
+    margin: 2px 16px !important;
     transition: all 0.15s ease;
     display: flex !important;
     align-items: center !important;
@@ -621,13 +631,9 @@ def render_sidebar(path: str) -> str:
     with st.sidebar:
         # Brand
         st.markdown(
-            f"<div style='padding:6px 0 14px;'>"
-            f"<div style='font-family:Outfit,sans-serif;font-size:20px;font-weight:800;"
-            f"color:{P['cream']};letter-spacing:-0.02em;line-height:1;'>"
-            f"<span style='color:{P['primary']};'>Heat</span> & Spice</div>"
-            f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;font-weight:700;"
-            f"letter-spacing:0.14em;text-transform:uppercase;color:{P['dim']};margin-top:3px;'>"
-            f"SPATIAL INTEL v0.3</div>"
+            f"<div class='custom-sidebar-brand'>"
+            f"<div style='font-family:Outfit,sans-serif;font-size:18px;font-weight:800;color:{P['cream']};letter-spacing:-0.02em;line-height:1.2;'>"
+            f"<span style='color:{P['primary']};'>Indonesian Chili</span><br>Price Forecasting</div>"
             f"</div>",
             unsafe_allow_html=True
         )
