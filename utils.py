@@ -383,7 +383,8 @@ def load_wfp_raw(path: str) -> pd.DataFrame:
 def get_chili_wfp(path: str, commodity_type: str = "birds_eye") -> pd.DataFrame:
     df = load_wfp_raw(path)
     ch = (df[df["commodity"].str.contains("Chili|chili", na=False, regex=True)]
-          .dropna(subset=["date", "price"]).copy())
+          .dropna(subset=["date", "price", "admin1"]).copy())
+    ch = ch[ch["admin1"].astype(str).str.strip() != ""].copy()
     # Filter: Data dari 2020 sampai 2024 saja
     ch = ch[(ch["date"] >= "2020-01-01") & (ch["date"] <= "2024-05-31")].copy()
     # Clean outlier/errant price entries
@@ -673,20 +674,35 @@ def render_sidebar(path: str) -> str:
             key="nav_commodity_type"
         )
 
-        # Dataset stats
+        # Dataset stats calculation
         chili_preview = get_chili_wfp(path, commodity_sel)
+
+        n_prov = chili_preview["admin1"].nunique() if not chili_preview.empty and "admin1" in chili_preview.columns else 0
+        n_kab  = chili_preview["admin2"].nunique() if not chili_preview.empty and "admin2" in chili_preview.columns else 0
+        n_mkt  = chili_preview["market"].nunique() if not chili_preview.empty and "market" in chili_preview.columns else 0
+        n_obs  = len(chili_preview)
+
         avg_p = chili_preview["price"].mean() if not chili_preview.empty else 0
         min_p = chili_preview["price"].min()  if not chili_preview.empty else 0
         max_p = chili_preview["price"].max()  if not chili_preview.empty else 0
-        n_obs = len(chili_preview)
+
+        if not chili_preview.empty and "date" in chili_preview.columns:
+            min_date = chili_preview["date"].min()
+            max_date = chili_preview["date"].max()
+            period_str = f"{min_date.strftime('%b %Y')} – {max_date.strftime('%b %Y')}"
+        else:
+            period_str = "Jan 2020 – Mei 2024"
 
         st.markdown(
             f"<div style='background:{P['surface']};border:1px solid {P['border']};"
-            f"border-radius:4px;padding:12px;margin:10px 16px;'>"
+            f"border-radius:6px;padding:12px 14px;margin:12px 16px;'>"
             f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:9px;font-weight:700;"
-            f"letter-spacing:0.12em;text-transform:uppercase;color:{P['tertiary']};margin-bottom:7px;'>DATASET OVERVIEW (2020–2024)</div>"
+            f"letter-spacing:0.12em;text-transform:uppercase;color:{P['tertiary']};margin-bottom:8px;'>DATASET OVERVIEW</div>"
             f"<div style='font-family:Outfit,sans-serif;font-size:11px;color:{P['muted']};line-height:2.0;'>"
-            f"Total Observasi &nbsp;<b style='color:{P['cream']};font-family:\"JetBrains Mono\",monospace;'>{n_obs:,}</b><br>"
+            f"Provinsi &nbsp;<b style='color:{P['cream']};font-family:\"JetBrains Mono\",monospace;'>{n_prov} Provinsi</b><br>"
+            f"Cakupan &nbsp;<b style='color:{P['cream']};font-family:\"JetBrains Mono\",monospace;'>{n_kab} Kab/Kota · {n_mkt} Pasar</b><br>"
+            f"Periode &nbsp;<b style='color:{P['cream']};font-family:\"JetBrains Mono\",monospace;'>{period_str}</b><br>"
+            f"Total Observasi &nbsp;<b style='color:{P['cream']};font-family:\"JetBrains Mono\",monospace;'>{n_obs:,} data</b><br>"
             f"Rata-rata &nbsp;<b style='color:{P['secondary']};font-family:\"JetBrains Mono\",monospace;'>Rp {avg_p:,.0f}/kg</b><br>"
             f"Terendah &nbsp;<b style='color:{P['cream']};font-family:\"JetBrains Mono\",monospace;'>Rp {min_p:,.0f}/kg</b><br>"
             f"Tertinggi &nbsp;<b style='color:{P['cream']};font-family:\"JetBrains Mono\",monospace;'>Rp {max_p:,.0f}/kg</b>"

@@ -137,7 +137,7 @@ tech_html = f"""
 <div style='background:{P['surface']};border-left:3px solid {P['tertiary']};padding:16px;border-radius:6px;border:1px solid {P['border']};border-left-width:3px;border-left-color:{P['tertiary']};'>
 <b style='font-family:Outfit,sans-serif;font-size:15px;color:{P['cream']};'>WFP - Indonesia Food Prices</b>
 <p style='font-family:Outfit,sans-serif;font-size:13px;color:{P['muted']};margin:6px 0 0 0;line-height:1.5;'>
-Dataset pergerakan harga pangan Indonesia dengan fokus analisis panel 2020–2024 pada 35 provinsi.
+Dataset pergerakan harga pangan Indonesia dengan fokus analisis panel 2020–2024 pada 34 provinsi.
 </p>
 </div>
 </div>
